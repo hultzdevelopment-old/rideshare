@@ -1,0 +1,119 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html"   charset="utf-8"/>
+		<title>Albright College Rideshare</title>
+		<!--<title>{{college.name}} Rideshare</title>-->
+		
+		<style type = "text/css">
+		body {
+			font-family: sans-serif;
+			width: 60%;
+			margin: 0 auto;
+			padding: 10px;
+		}
+		#map_canvas {
+    		height: 500px;	
+		}
+		</style>
+	
+		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+		<script>
+			var map;
+			function initialize() {
+				var mapOptions = {
+					zoom: 8,
+					center: new google.maps.LatLng(-34.397, 150.644),
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				map = new google.maps.Map(document.getElementById('map-canvas'),
+					mapOptions);
+			}
+			
+			google.maps.event.addDomListener(window, 'load', initialize)
+		</script>
+	</head>
+	
+	
+	
+	<body onload="initialize()">
+		<div class="header">
+	    	<div class="logo">
+	    		<h1><a href="/main">Albright College Rideshare   </a></h1>
+	    		<!--  <h1><a href="/main">{{college.name}} Rideshare   </a></h1>-->
+	        </div>
+	        <div class="welcome-message">
+	        	<!-- Welcome, {{user}}-->
+	        	Welcome, Nick Hultz
+	        </div>
+	      	<div class="menu">
+	        	<ul>
+					<li><a href="/home">Your Rides</a></li>
+					<li><a href="{{logout}}">Sign out</a></li>
+					<li><a href="/static/help.html">Help</a></li>
+	        	</ul>
+	      	</div>
+		</div>
+		
+		<div class="search-rides">
+			<table>
+				<tr>
+					<td width="50%">
+						Click anywhere on the map to create a
+			            destination or starting point. You may want to zoom in first. You can
+			            add yourself to a ride by clicking on one of the red or
+			            green pushpins on the map.  <br><br>
+			            Enter an address or filter the pushpins by date using the
+			            controls on the right.
+					</td>
+					
+					<td>
+						<table class="search-form">
+							<tr class="search-box">
+								<td>
+									<form action="#" onsubmit="showAddress(this.address.value); return false">
+						             	Enter an address or city, state to create a ride:
+						             <input type="text" size="45" name="address" value="" />
+						             <input type="submit" value="Go!" />
+						           	</form>
+						         </td>
+							</tr>
+							<tr class="search-dates">
+								<td>
+									<form>
+										<label>Beginning
+										<select name="imonth" id="imonth"></select>
+										<select name="iday" id="iday"></select>
+										<select name="iyear" id="iyear"></select>
+										</label>
+								
+										<label>Ending
+										<select name="fmonth" id="fmonth"></select>
+										<select name="fday" id="fday"></select>
+										<select name="fyear" id="fyear"></select>
+										</label>
+
+										<input type="button" value="Show Matching Rides" />	
+									</form>
+								</td>
+							</tr>
+				    	</table>
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div id="map_canvas">
+		</div>
+		
+		<div class="available-rides">
+			<div class="rides-header">
+				<h2>All Available Rides.</h2>
+                <p>Click Destination to join</p>
+			</div>
+		</div>
+		
+		
+	</body>
+</html>
