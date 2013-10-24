@@ -3,24 +3,8 @@
 <html>
 	<head>
 		<meta http-equiv="content-type" content="text/html"   charset="utf-8"/>
-		<title>Albright College Rideshare</title>
-		<!--<title>{{college.name}} Rideshare</title>-->
-		
-		<style type = "text/css">
-		body {
-			font-family: sans-serif;
-			width: 60%;
-			margin: 0 auto;
-			padding: 10px;
-		}
-		#map-canvas {
-    		height: 500px;	
-		}
-		
-		#ride-table {
-			width: 100%;
-		}
-		</style>
+		<link rel="stylesheet" href="static/main.css" type="text/css" media="screen" />
+		<title>{{college.name}} Rideshare</title>
 	
 		<script type="text/javascript"
       		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQ52HDMJAYc6F6qworCH2Q4jpHCBmI77k&sensor=false">
@@ -29,7 +13,7 @@
  			var map; 
  			function initialize() { 
    				var mapOptions = { 
-     				zoom: 15, 
+     				zoom: 6, 
     				center: new google.maps.LatLng(40.360634, -75.909729), 
      				mapTypeId: google.maps.MapTypeId.ROADMAP 
    				}; 
@@ -44,17 +28,15 @@
 	<body onload="initialize()">
 		<div class="header">
 	    	<div class="logo">
-	    		<h1><a href="/main">Albright College Rideshare </a></h1>
-	    		<!--  <h1><a href="/main">{{college.name}} Rideshare   </a></h1>-->
+	    		<h1><a href="/main">{{college.name}} Rideshare   </a></h1>
 	        </div>
 	        <div class="welcome-message">
-	        	<!-- Welcome, {{user}}-->
-	        	Welcome, Nick Hultz
+	        	Welcome, {{user}}
 	        </div>
 	      	<div class="menu">
 	        	<ul>
 					<li><a href="/home">Your Rides</a></li>
-					<li><a href="{{logout}}">Sign out</a></li>
+					<li><a href="">Sign out</a></li>
 					<li><a href="/static/help.html">Help</a></li>
 	        	</ul>
 	      	</div>
@@ -76,10 +58,10 @@
 						<table class="search-form">
 							<tr class="search-box">
 								<td>
-									<form action="#" onsubmit="showAddress(this.address.value); return false">
-						             	Enter an address or city, state to create a ride:
-						             <input type="text" size="45" name="address" value="" />
-						             <input type="submit" value="Go!" />
+									<form action="#" onsubmit="">
+							             	Enter an address or city, state to create a ride:
+							             <input type="text" size="45" name="address" value="" />
+							             <input type="submit" value="Go!" />
 						           	</form>
 						         </td>
 							</tr>
@@ -130,6 +112,14 @@
                  		 </tr>
                 	</thead>
 	                <tbody id="rideTableBody">
+	                	<tr class="centered-cell">
+	                		<td>Nick Hultz</td>
+	                		<td>3</td>
+	                		<td>Albright College</td>
+	                		<td>Oxford, PA</td>
+	                		<td>October 25, 2013</td>
+	                		<td class="ride-comment">Please somebody pay for gas! It would be appreciated. Email me at nick@albright.edu</td>
+	                	</tr>
 	                </tbody>
             	</table>
         	</div>
