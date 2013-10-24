@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <html>
 	<head>
@@ -13,26 +13,26 @@
 			margin: 0 auto;
 			padding: 10px;
 		}
-		#map_canvas {
+		#map-canvas {
     		height: 500px;	
 		}
 		</style>
 	
-		<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
-		<script>
-			var map;
-			function initialize() {
-				var mapOptions = {
-					zoom: 8,
-					center: new google.maps.LatLng(-34.397, 150.644),
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-				};
-				map = new google.maps.Map(document.getElementById('map-canvas'),
-					mapOptions);
-			}
-			
-			google.maps.event.addDomListener(window, 'load', initialize)
+		<script type="text/javascript"
+      		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQ52HDMJAYc6F6qworCH2Q4jpHCBmI77k&sensor=false">
 		</script>
+		<script>
+ 			var map; 
+ 			function initialize() { 
+   				var mapOptions = { 
+     				zoom: 15, 
+    				center: new google.maps.LatLng(40.360634, -75.909729), 
+     				mapTypeId: google.maps.MapTypeId.ROADMAP 
+   				}; 
+   				
+  				map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+ 			} 
+     	</script> 
 	</head>
 	
 	
@@ -40,7 +40,7 @@
 	<body onload="initialize()">
 		<div class="header">
 	    	<div class="logo">
-	    		<h1><a href="/main">Albright College Rideshare   </a></h1>
+	    		<h1><a href="/main">Albright College Rideshare </a></h1>
 	    		<!--  <h1><a href="/main">{{college.name}} Rideshare   </a></h1>-->
 	        </div>
 	        <div class="welcome-message">
@@ -104,8 +104,7 @@
 			</table>
 		</div>
 		
-		<div id="map_canvas">
-		</div>
+		<div id="map-canvas"></div>
 		
 		<div class="available-rides">
 			<div class="rides-header">
