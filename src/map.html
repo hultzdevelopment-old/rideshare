@@ -16,6 +16,10 @@
 		#map-canvas {
     		height: 500px;	
 		}
+		
+		#ride-table {
+			width: 100%;
+		}
 		</style>
 	
 		<script type="text/javascript"
@@ -107,10 +111,28 @@
 		<div id="map-canvas"></div>
 		
 		<div class="available-rides">
+		
 			<div class="rides-header">
 				<h2>All Available Rides.</h2>
                 <p>Click Destination to join</p>
 			</div>
+			
+			<div class="ridelist">
+            	<table border="1" id="ride-table">
+                	<thead>
+                  		<tr>
+                    		<th>Driver's Name</th>
+                    		<th>Additional Passengers</th>
+		                    <th>Starting Point</th>
+		                    <th>Destination</th>
+		                    <th>Time of Departure</th>
+		                    <th>Comments</th>
+                 		 </tr>
+                	</thead>
+	                <tbody id="rideTableBody">
+	                </tbody>
+            	</table>
+        	</div>
 		</div>
 		
 		
