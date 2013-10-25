@@ -1,9 +1,43 @@
 body {
-	font-family: sans-serif;
-	width: 60%;
+	width: 70%;
 	margin: 0 auto;
 	padding: 10px;
+	background: #FFFFFF;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	color: #787878;
+	
 }
+
+h1, h2, h3 {
+	margin: 0;
+	padding: 0;
+	font-weight: normal;
+	color: #32639A;
+}
+
+h1 {
+	font-size: 2em;
+}
+
+h2 {
+	font-size: 2.4em;
+}
+
+h3 {
+	font-size: 1.6em;
+}
+
+p, ul, ol {
+	margin-top: 0;
+	line-height: 180%;
+}
+
+a {
+	text-decoration: none;
+	color: #4486C7;
+}
+
 #map-canvas {
 	height: 500px;	
 }
@@ -18,37 +52,4 @@ body {
 
 .ride-comment {
 	text-align: left;
-}
-
-/* Menu */
-
-.menu {
-	width: 940px;
-	height: 49px;
-	margin: 0 auto;
-	padding: 0;
-}
-
-.menu ul {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	line-height: normal;
-}
-
-.menu li {
-	float: left;
-}
-
-.menu a {
-	display: block;
-	width: 155px;
-	height: 33px;
-	padding-top: 16px;
-	text-decoration: none;
-	text-align: center;
-	font-family: Arial, Helvetica, sans-serif;
-	font-size: 13px;
-	font-weight: bold;
-	border: none;
 }
