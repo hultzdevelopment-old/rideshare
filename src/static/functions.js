@@ -1,5 +1,4 @@
 var map;
-var month = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
 //Initializes the map
 function initialize() { 
