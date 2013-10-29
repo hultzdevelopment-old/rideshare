@@ -5,11 +5,24 @@
 		<meta http-equiv="content-type" content="text/html"   charset="utf-8"/>
 		<link rel="stylesheet" href="static/main.css" type="text/css" media="screen" />
 		<title>{{college.name}} Rideshare</title>
-	
-		<script type="text/javascript"
-      		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQ52HDMJAYc6F6qworCH2Q4jpHCBmI77k&sensor=false">
-		</script>
+		
 		<script src="static/functions.js" type="text/javascript"></script>
+		
+		<script src="static/jquery-1.10.2.js" type="text/javascript"></script>
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQ52HDMJAYc6F6qworCH2Q4jpHCBmI77k&sensor=false"></script>
+		
+		
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+ 		<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+ 		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+ 		
+		<script>
+  			$(document).ready(function() {
+    			$("#begindate").datepicker()
+    			$("#enddate").datepicker()
+				}
+			);
+  		</script>
 		
 	</head>
 	
@@ -59,28 +72,32 @@
 								<td>
 									<form>
 										<label>Beginning
-										<select name="imonth" id="imonth">
-											<script type="text/javascript">{monthOptions("imonth");}</script>
-										</select>
+											<input id="begindate"/>
 										</label>
-										<select name="iday" id="iday"></select>
-										<select name="iyear" id="iyear">
-											<script type="text/javascript">{yearOptions("iyear");}</script>
-										</select>
+										
+										
+<!-- 										<select name="imonth" id="imonth"> -->
+<!-- 											<script type="text/javascript">{monthOptions("imonth");}</script> -->
+<!-- 										</select> -->
+<!-- 										</label> -->
+<!-- 										<select name="iday" id="iday"></select> -->
+<!-- 										<select name="iyear" id="iyear"> -->
+<!-- 											<script type="text/javascript">{yearOptions("iyear");}</script> -->
+<!-- 										</select> -->
 										
 								
 										<label>Ending
-										<select name="fmonth" id="fmonth">
-											<script type="text/javascript">{monthOptions("fmonth");}</script>
-										</select>
+											<input id="enddate"/>
 										</label>
-										<select name="fday" id="fday"></select>
-										<select name="fyear" id="fyear">
-											<script type="text/javascript">{yearOptions("fyear");}</script>
-										</select>
 										
-										
-										 
+<!-- 										<select name="fmonth" id="fmonth"> -->
+<!-- 											<script type="text/javascript">{monthOptions("fmonth");}</script> -->
+<!-- 										</select> -->
+<!-- 										</label> -->
+<!-- 										<select name="fday" id="fday"></select> -->
+<!-- 										<select name="fyear" id="fyear"> -->
+<!-- 											<script type="text/javascript">{yearOptions("fyear");}</script> -->
+<!-- 										</select> -->
 
 										<input type="button" value="Show Matching Rides" />	
 									</form>
