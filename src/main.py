@@ -3,6 +3,7 @@ import os
 import webapp2
 import jinja2
 import hmac
+import re
 
 from google.appengine.ext import db
 from google.appengine.api import users
@@ -20,9 +21,11 @@ secret = 'nAIq3dHJ9gNN*jql9P*u%@zOdceZ&V2MUSe0DxYSnna$!n699^!cx2K9qP~IXtEbtnrjFc
 #make sure the college is inside the datastore
 college_query = db.Query(College)
 if college_query.count()==0:
-  college = College(name="Albright College", address="1621 N. 13th Street, Reading, PA 19604",
+    college = College(name="Albright College", address="1621 N. 13th Street, Reading, PA 19604",
                     lat=40.360634, lng=-75.909729)
-  college.put()
+    college.put()
+else:
+    college = college_query.get()
   
 def render_str(template, **params):
     t = jinja_env.get_template(template)
@@ -35,6 +38,15 @@ def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
+
+def format_name(email):
+    match = re.search(r'[a-z]+.[a-z]+', email)
+    name_list = match.group().split('.')
+    
+    first_name = name_list[0].capitalize()
+    last_name = name_list[1].capitalize()
+    name = first_name + ' ' + last_name
+    return name
 
 #Base Handler with useful convience functions
 class Handler(webapp2.RequestHandler):
@@ -59,7 +71,7 @@ class Handler(webapp2.RequestHandler):
         return cookie_val and check_secure_val(cookie_val)
 
     def login(self, user):
-        self.set_secure_cookie('user_id', str(user.key().id()))
+        self.set_secure_cookie('user_id', str(user.email()))
 
     def logout(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
@@ -67,29 +79,28 @@ class Handler(webapp2.RequestHandler):
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
-        self.user = uid and User.by_id(int(uid))
+        self.user = uid
         
 class MainHandler(Handler):
     def render_map(self, college="", user="",logout_url=""):
         self.render("main.html", college=college, user=user, logout_url=logout_url)
         
     def get(self):
-        college = db.Query(College).get()
+        user = users.get_current_user()
         logout_url = users.create_logout_url('/logout')
-        self.render_map(college, "Nick Hultz", logout_url)
+        self.render_map(college, user.nickname(), logout_url)
         
 class HomeHandler(Handler):
     def get(self):
-        college = db.Query(College).get()
         logout_url = users.create_logout_url('/logout')
         self.render('home.html', college=college, logout_url=logout_url)
 
 class LoginHandler(Handler):
     def get(self):
         user = users.get_current_user()
-        college = db.Query(College).get()
-        
-        if user and user.email().endswith("albright.edu"):
+        if user and (user.email().endswith("albright.edu") or user.email().endswith("alb.edu")): 
+            name = format_name(user.email())
+            self.login(user)
             self.redirect('/main')
         else:   
             login_url = users.create_login_url('/')
@@ -97,13 +108,12 @@ class LoginHandler(Handler):
 
 class LogoutHandler(Handler):
     def get(self):
-        college = db.Query(College).get()
         self.render("logoutPage.html", college=college)
         
 class HelpHandler(Handler):
     def get(self):
-        college = db.Query(College).get()
         logout_url = users.create_logout_url('/logout')
+        self.logout()
         self.render("help.html", college = college, logout_url = logout_url)
        
         
