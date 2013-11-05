@@ -9,5 +9,14 @@ function initialize() {
 	}; 
 	
 	map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+	
+	var acOptions = {
+			types: ['geocode']
+	};
+	
+	var autocomplete = new google.maps.places.Autocomplete(document.getElementById('search-bar'),acOptions);
+	autocomplete.bindTo('bounds',map);
+	
 } 
+
 

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/static/main.css" />
+
+  <title>{{college.name}} Rideshare</title>
+</head>
+
+<body>
+	<div class="header">
+	    <div class="logo">
+	    	<h1><a href="/main">{{college.name}} Rideshare</a></h1>
+	    </div>
+	      	
+	    <div class="menu">
+    		<ul>
+				<li><a href="/home">Your Rides</a></li>
+				<li><a href="{{logout_url}}">Sign out</a></li>
+				<li><a href="/help">Help</a></li>
+    		</ul>
+  		</div>
+	</div>
+	
+  	<div id="content">
+  		{% block content %}
+  		{% endblock %}
+  	</div>
+  	
+</body>
+</html>
