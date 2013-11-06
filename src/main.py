@@ -48,7 +48,7 @@ def format_name(email):
     name = first_name + ' ' + last_name
     return name
 
-#Base Handler with useful convience functions
+#Base Handler with useful convenience functions
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.write(*a, **kw)
@@ -71,50 +71,69 @@ class Handler(webapp2.RequestHandler):
         return cookie_val and check_secure_val(cookie_val)
 
     def login(self, user):
-        self.set_secure_cookie('user_id', str(user.email()))
+        self.set_secure_cookie('userid', str(user.user_id()))
 
     def logout(self):
-        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
+        self.response.headers.add_header('Set-Cookie', 'userid=; Path=/')
 
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
-        uid = self.read_secure_cookie('user_id')
-        self.user = uid
+        uid = self.read_secure_cookie('userid')
+        self.user = uid and UserPrefs.by_id(uid)
         
 class MainHandler(Handler):
     def render_map(self, college="", user="",logout_url=""):
         self.render("main.html", college=college, user=user, logout_url=logout_url)
         
     def get(self):
-        user = users.get_current_user()
-        logout_url = users.create_logout_url('/logout')
-        self.render_map(college, user.nickname(), logout_url)
+        if self.user:   
+            logout_url = users.create_logout_url('/logout')
+            self.render_map(college, self.user.name, logout_url)
+        else:
+            self.redirect('/')
         
 class HomeHandler(Handler):
     def get(self):
-        logout_url = users.create_logout_url('/logout')
-        self.render('home.html', college=college, logout_url=logout_url)
+        if self.user: 
+            logout_url = users.create_logout_url('/logout')
+            self.render('home.html', college=college, logout_url=logout_url)
+        else:
+            self.redirect('/')
 
 class LoginHandler(Handler):
     def get(self):
         user = users.get_current_user()
         if user and (user.email().endswith("albright.edu") or user.email().endswith("alb.edu")): 
-            name = format_name(user.email())
-            self.login(user)
-            self.redirect('/main')
+            if UserPrefs.by_id(user.user_id()):
+                self.login(user)
+                self.redirect('/main')
+            else:
+                name = format_name(user.email())
+                new_user = UserPrefs(userid = user.user_id(), name = name)
+                new_user.put()
+                
+                self.login(user)
+                self.redirect('/main')    
         else:   
             login_url = users.create_login_url('/')
             self.render("loginPage.html", college = college, login = login_url)
 
 class LogoutHandler(Handler):
     def get(self):
-        self.render("logoutPage.html", college=college)
+        if self.user:
+            self.logout()
+            self.render("logoutPage.html", college=college)
+        else:
+            self.redirect('/')
         
 class HelpHandler(Handler):
     def get(self):
-        logout_url = users.create_logout_url('/logout')
-        self.logout()
-        self.render("help.html", college = college, logout_url = logout_url)
+        if self.user:
+            logout_url = users.create_logout_url('/logout')
+            self.logout()
+            self.render("help.html", college = college, logout_url = logout_url)
+        else:
+            self.redirect('/')
        
         
 app = webapp2.WSGIApplication([
