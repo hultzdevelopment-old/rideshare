@@ -26,19 +26,23 @@ if college_query.count()==0:
     college.put()
 else:
     college = college_query.get()
-  
+
+#global function to render templates
 def render_str(template, **params):
     t = jinja_env.get_template(template)
     return t.render(params)
 
+#make cookie values secure
 def make_secure_val(val):
     return '%s|%s' % (val, hmac.new(secret, val).hexdigest())
 
+#used to make sure cookie hasn't been tampered with
 def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
 
+#name function to generate name from albright email
 def format_name(email):
     match = re.search(r'[a-z]+.[a-z]+', email)
     name_list = match.group().split('.')
