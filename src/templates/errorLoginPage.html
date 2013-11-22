@@ -1,0 +1,14 @@
+ {% extends "headers/login_header.html" %}
+
+{% block content %}
+	<div id="loginHeader">
+    	<h2>Wrong Login</h2>                      
+        <p>Sorry! It seems that you didn't log in with a valid Albright Email Account</p>
+	</div>
+	
+	<div id="logout-button">
+		<a href="{{ logout }}">Please click here to logout and try again.</a>
+	</div>
+	
+                    
+{% endblock %}

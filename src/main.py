@@ -62,7 +62,7 @@ class Handler(webapp2.RequestHandler):
         return t.render(params)
     
     def render(self, template, **kw):
-        self.write(self.render_str(template, **kw))
+        self.write(self.render_str(template, **kw)) 
         
     def set_secure_cookie(self, name, val):
         cookie_val = make_secure_val(val)
@@ -117,7 +117,11 @@ class LoginHandler(Handler):
                 new_user.put()
                 
                 self.login(user)
-                self.redirect('/main')    
+                self.redirect('/main')  
+                
+        elif user:
+            self.redirect('errorLogin')
+              
         else:   
             login_url = users.create_login_url('/')
             self.render("loginPage.html", college = college, login = login_url)
@@ -129,6 +133,11 @@ class LogoutHandler(Handler):
             self.render("logoutPage.html", college=college)
         else:
             self.redirect('/')
+            
+class ErrorLoginHandler(Handler):
+    def get(self):
+        logout_url = users.create_logout_url('/')
+        self.render("errorLoginPage.html", college = college, logout = logout_url)
         
 class HelpHandler(Handler):
     def get(self):
@@ -142,6 +151,7 @@ class HelpHandler(Handler):
         
 app = webapp2.WSGIApplication([
                                ('/', LoginHandler),
+                                    ('/errorLogin', ErrorLoginHandler),
                                ('/main', MainHandler),
                                ('/home', HomeHandler),
                                ('/logout', LogoutHandler),

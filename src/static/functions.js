@@ -9,6 +9,7 @@ var mycollege = new College("Albright College","Reading, PA",40.360634,-75.90972
 
 //Initializes the map
 function initialize() { 
+	
 	//create map options and initialize the map
 	var mapOptions = { 
 		zoom: 6, 
@@ -64,7 +65,7 @@ function getAddress(event){
 //reverse geocodes an address from latLng and starts ride pop ups
 function showAddressClick(results, status){
     if (!status || status != google.maps.GeocoderStatus.OK) {
-        alert("Geocode Failed. Status:" + status); 
+        alert("Geocoding for that address failed. Please try again!"); 
     } else {
         var point = results[0].geometry.location;
         windowOpen(point, getBeginRideHTML(point.lat(), point.lng(), results[0].formatted_address));
@@ -83,7 +84,8 @@ function getBeginRideHTML(lat, lng, address){
 
 //opens the window to create a new ride
 function startRideCreationPopup(lat, lng, address){
-	windowOpen(new google.maps.LatLng(lat, lng), getRideCreationHTML(lat, lng, address));
+	var html_code = getRideCreationHTML(lat, lng, address);
+	windowOpen(new google.maps.LatLng(lat, lng), html_code);
 }
 
 //returns new ride creation html form that decides the direction of the ride
@@ -105,9 +107,10 @@ function getRideCreationHTML(lat, lng, address){
     return html;
 }
 
-//opens the window to create a new ride
+//opens the window to determine if passenger or driver
 function startPassengerOrDriverPopup(lat, lng, address, eventID){
-	windowOpen(new google.maps.LatLng(lat, lng), getPassengerOrDriverHTML(lat, lng, address, eventID));
+	var html_code = getPassengerOrDriverHTML(lat, lng, address, eventID);
+	windowOpen(new google.maps.LatLng(lat, lng), html_code);
 }
 
 //returns html form for determining passenger or driver
@@ -117,10 +120,10 @@ function getPassengerOrDriverHTML(lat, lng, address, eventID){
     html += "<form><p>";
     
     html += "<input onclick=\"startRideInfoPopup(" + lat + ", " + lng + ", '"
-            + address + "', " + eventID + ", " + "true);\" type=\"radio\" name=\"driver\" value=\"0\" /> I will drive <br>";
+            + address + "', " + eventID + ",true);\" type=\"radio\" name=\"driver\" value=\"0\" /> I will drive <br>";
     
     html += "<input onclick=\"startRideInfoPopup(" + lat + ", " + lng + ", '"
-            + address + "', " + eventID + ", " + "false);\" type=\"radio\" name=\"driver\" value=\"1\" /> I am looking for a ride <br>";
+            + address + "', " + eventID + ",false);\" type=\"radio\" name=\"driver\" value=\"1\" /> I am looking for a ride <br>";
     
     html += "</form></p>";
     
@@ -134,28 +137,31 @@ function getPassengerOrDriverHTML(lat, lng, address, eventID){
 }
 
 //opens the window to fill in all ride info
-function startRideInfoPopup(lat, lng, address, eventID, isDriver){
-	windowOpen(new google.maps.LatLng(lat, lng), getRideInfoHTML(lat, lng, address, eventID, isDriver));
+function startRideInfoPopup(lat, lng, address, eventID, isDriver, maxp, number){
+	var html_code = getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number);
+	windowOpen(new google.maps.LatLng(lat, lng), html_code);
 }
 
 //returns html form for complete ride info
-function getRideInfoHTML(lat, lng, address, eventID, isDriver){
+function getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number){
+	maxp = (typeof maxp == 'undefined') ? '': maxp;
+	number = (typeof number == 'undefined') ? '': number; 
     var html = "<b>Create a New Ride</b><hr>";
     
     html +="<div id=\"ride-info\">Please ensure that your address is as specific as possible<br>" +
     "(<i>37 </i> Main Street, not <i>30-50</i> Main Street)<br>"
     
-    html += "<div id=\"from-text\">From <input type=\"text\" id=\"textFrom\" name='textFrom' size=\"50\"";
+    html += "<div id=\"from-text\">From <input type=\"text\" id=\"textFrom\" name=\"textFrom\" size=\"50\"";
     
     //check to see the order of the destinations and fill in From and To
     if (eventID == "0"){
-    	html += "value='"+mycollege.name + "'readonly='readonly'";
+    	html += "value='" + mycollege.name + "'readonly='readonly'";
     } else {
     	html += "value='"+ address +"'";
     }
     html += "></div>";
     
-    html += "<div id=\"to-text\">To <input type=\"text\" id=\"textTo\" name='textTo' size=\"50\"";
+    html += "<div id=\"to-text\">To <input type=\"text\" id=\"textTo\" name=\"textTo\" size=\"50\"";
     if (eventID == "0"){
     	html += "value='"+ address +"'";
     } else {
@@ -166,14 +172,15 @@ function getRideInfoHTML(lat, lng, address, eventID, isDriver){
     //only add the max passenger option if the person is a driver
     html += "<div id=\"max-pass\">";
     if (isDriver) {
-    	 html += "Maximum number of passengers: <input type=\"text\" name=\"maxp\" id=\"maxp\" maxLength=\"2\" size=\"3\" value=\"2\"><br></div>";
+    	 html += "Maximum number of passengers: <input type=\"text\" name=\"maxp\" id=\"maxp\" value=\"" + maxp +"\" maxLength=\"2\" size=\"3\"><br></div>";
     }
     
+    //contact phone number
     html += "<div id=\"phone-num\">Contact Phone Number: " + 
-    	"<input type=\"text\" name=\"number\" id=\"number\" maxlength=\"12\" size=\"10\"></div>";
+    	"<input type=\"text\" name=\"number\" id=\"number\" value=\"" + number + "\" maxlength=\"12\" size=\"10\"></div>";
     
-    
-    html += "<div id=\"time-of-depart\">Time of Departure: <br><select name=\"earlylate\" id=\"earlylate\">" +
+    //time of depart_time_timeure
+    html += "<div id=\"time-of-depart\">Time of departure: <br><select name=\"earlylate\" id=\"earlylate\">" +
     	"<option value=\"0\" selected=\"selected\">Early</option>" + 
     	"<option value=\"1\">Late</option></select>";
     
@@ -182,21 +189,169 @@ function getRideInfoHTML(lat, lng, address, eventID, isDriver){
     	"<option value=\"1\">Afternoon</option>" +
     	"<option value=\"2\">Evening</option></select>";
     
+    //fill in month, day, and year selectors
     html += "<select name=\"month\" id=\"month\" onchange=\"changeDays(document.getElementById('day'), this); return false;\">" + getMonthOptions() + "</select>";
-    html += "<select name=\"day\" id=\"day\">" + getDayOptions(document.getElementById('month')) + "</select>";
-    html += "<select name=\"year\" id=\"year\">" + getYearOptions() + "</select>";
+    html += "<select name=\"day\" id=\"day\">" + getTodayDayOptions() + "</select>";
+    html += "<select name=\"year\" id=\"year\">" + getYearOptions() + "</select></div>";
     
-
-    
-    html += "<br>Comments: <input type=\"text\" id=\"ridecomment\" name=\"ridecomment\" size=\"50\">"
+    //additional comments and submit / cancel buttons
+    html += "<div id=\"comments\"><br>Comments: <input type=\"text\" id=\"ridecomment\" name=\"ridecomment\" size=\"50\"></div>"
     html += "<div id=\"buttons\"><input type=\"submit\" id=\"submit\" name=\"submit\" " + 
-    "value=\"Okay\" onclick=\"verifyNewRidePopup("+ lat +", "+ lng +", '"+ address +"', "+ isDriver +"); return false;\"'>" + 
+    "value=\"Okay\" onclick=\"verifyRideInfo("+ lat +", "+ lng +", '"+ address +"', "+ eventID + ", " + isDriver +"); return false;\"'>" + 
     "<input type=\"button\" id=\"cancel\" name='cancel' value='Cancel' onclick='windows.pop().close(); putListener();'></div>" + 
-    "<input type=\"hidden\" name=\"driver\" value=\""+ isDriver +"\">";
+    "<input type=\"hidden\" name=\"driver\" id=\"driver\" value=\""+ isDriver +"\">";
     
-    return html
+    return html	
+}
 
-	
+function verifyRideInfo(lat, lng, address, eventID, isDriver){
+	//get all entered values from the user to verify correctness
+	var from = document.getElementById("textFrom").value;
+    var to = document.getElementById("textTo").value;
+    var depart_time = document.getElementById("time-of-depart").value;
+    var partofday = document.getElementById("partofday").value;
+    var month = document.getElementById("month").value;
+    var day = document.getElementById("day").value;
+    var year = document.getElementById("year").value;
+    var comment = document.getElementById("ridecomment").value;
+    var number = document.getElementById("number").value;
+    var driver_check = document.getElementById("driver").value;
+    
+    if(driver_check){
+    	var maxp = document.getElementById("maxp").value;
+    } else {
+    	var maxp = "3";
+    }
+    
+    var goodContact = false;
+    goodContact = validatePhoneNumber(number);
+    
+    var currentTime = new Date();
+    var rideDate = new Date(year, month, day);
+    
+    //make sure that the number of passengers is just numbers
+    var badmaxp = false;
+    if (/[^0-9-]+/.test(maxp)) {
+    	badmaxp = true;
+    }
+    
+    //Ensure valid number is supplied
+    if (! goodContact){
+    	
+        alert("Please supply a valid ten-digit contact number.");
+        
+    } 
+ // Ensure to and from are filled
+    else if (to == '') {
+        alert("Please supply a destination.");
+        
+    } else if (from == '') {
+    	alert("Please supply a start point.");
+    	
+    }
+    // Ensure maxp is filled
+    else if (isDriver && (maxp == '' || badmaxp)) {
+        alert("Please supply a valid maximum number of passengers.");
+        
+    }
+    // test date.. make sure it is in the future
+    else if (rideDate < currentTime) {
+    	alert("The date for a ride must be in the future " + rideDate);
+    	
+    }
+    // Bring up confirm window
+    else {
+    	number = number.replace(/-/g,"");
+        number = number.replace(/ /g,"");
+        number = number.replace(/\./g,"");
+    	number = number.slice(0, 3) + '-' + number.slice(3, 6) + '-' + number.slice(6);
+    	
+        var html_code = getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, depart_time, partofday, month, day, year, comment);
+        windowOpen(new google.maps.LatLng(lat,lng), html_code);
+    }      
+}
+
+function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, depart_time, partofday, month, day, year, comment){
+	var vals = {};
+    vals['lat'] = lat;
+    vals['lng'] = lng;
+    vals['from'] = from;
+    vals['to'] = to;
+    vals['maxp'] = maxp;
+    vals['contact'] = number;
+    vals['depart_time_time'] = depart_time;
+    vals['partofday'] = partofday;
+    vals['month'] = month;
+    vals['day'] = day;
+    vals['year'] = year;
+    vals['isDriver'] = isDriver;
+    vals['comment'] = comment;
+
+    if (from == mycollege.name) {
+    	vals['toAlbright'] = false;
+    } else {
+    	vals['toAlbright'] = true;
+    }
+
+
+    var func_call = 'saveRide(' + JSON.stringify(vals)+')';
+    var html = "";
+    html += "<b>Is the following information correct?</b><br>";
+    html += "<b>From:</b> " + from + "<br>";
+    html += "<b>To:</b> " + to + "<br>";
+    html += "<b>Departing:</b> ";
+    if (depart_time == 0) {
+        html += "Early ";
+    }
+    else {
+        html += "Late ";
+    }
+    if (partofday == 0) {
+        html += "Morning, ";
+    }
+    else if (partofday == 1) {
+        html += "Afternoon, ";
+    }
+    else {
+        html += "Evening, ";
+    }
+    html += convertMonthNum(month) + " " + day + ", " + year + "<br>";
+    html += "<b>Maximum passengers:</b> " + maxp + "<br>";
+    html += "<b>Contact Number:</b> " + number + "<br>";
+    html += "<form>";
+    html += "<input type='button' id='submit' name='submit' value='Submit' onclick='" + func_call + "'/>";
+    html += "<input type='button' id='cancel' name='cancel' value='Back' onclick=\"startRideInfoPopup(";
+    html += lat + ", " + lng + ", '";
+    
+    if(eventID == "0"){
+    	html += to;
+    } else {
+    	html += from;
+    }
+    
+    
+    html += "', " + eventID + ", " + isDriver + ", " + maxp + ", '" + number +"');\"/></form>";
+    
+    return html;
+}
+
+//saves the ride and refreshs the map
+function  saveRide(vals) {
+    var request = new XMLHttpRequest();
+    var reqStr = '/newride?';
+
+    for (var prop in vals) {
+    	reqStr += prop + "=" + vals[prop] + "&";
+    }
+
+    request.open("GET",reqStr,false);
+    request.send(null);
+    clickListener = google.maps.event.addListener(map, "click", getAddress);
+    if (request.status == 200) {
+    	initialize();
+    } else {
+    	alert("An error occurred, check your responses and try again.");
+    }
 }
 
 
@@ -227,13 +382,31 @@ function putListener(){
    clickListener = google.maps.event.addListener(map, "click", getAddress);
 }
 
-//Create a dropdown list of months with this month selected.
+//Changes a numerical month returned from a Date object to a String
+function convertMonthNum(index){
+    var monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return monthList[index-1];
+}
+
+//Validates that the phone number is 10 digits long 
+function validatePhoneNumber(number) {
+    number = number.replace(/-/g,"");
+    number = number.replace(/ /g,"");
+    number = number.replace(/\./g,"");
+
+    if (/\d{10}/.test(number) && number.length == 10) {
+    	return true;
+    } else {
+    	return false;
+    }
+}
+
+//Creates the dropdown options for the month selector
 function getMonthOptions() {
-	console.log("month-options")
     var today = new Date();
     var monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var html = "";
-    for (i=0; i < monthList.length; i++) {
+    for (var i=0; i < monthList.length; i++) {
     	html += '<option value="'+(i+1)+'" ';
     	if (today.getMonth() == i) {
     		html += 'selected="true" ';
@@ -243,20 +416,8 @@ function getMonthOptions() {
     return html;
 }
 
-//Creates a dropdown list of the current days
-function getDayOptions(month){
-	console.log(month)
-    var days = getMonthDays(month);
-	var html = "";
-	for (var i=1; i<days; i++){
-		html += "<option value=\"" + i + "\">" + i + "</option>";
-	}
-	return html;
-}
-
-// Creates a dropdown list of the past year and 3 more
+// Creates the dropdown options for the year selector
 function getYearOptions(){
-	console.log("year-options")
     var today = new Date();
     var yr = today.getFullYear();
     var html = "";
@@ -264,6 +425,24 @@ function getYearOptions(){
         html += "<option value=\"" + i + "\">" + i + "</option>";
     }
     return html;
+}
+
+//Returns the dropdown options that include the days for the current month
+function getTodayDayOptions(){
+	var today = new Date();
+    var today_month = today.getMonth();
+    var today_day = today.getDate();
+    var days = [31,28,31,30,31,30,31,31,30,31,30,31];
+    var html = "";
+    
+    for (var i = 1; i < (days[today_month]+1); i++){
+        html += "<option value=\""+i+"\" ";
+        if ( (today_day) == i ) {
+        	html += "selected=\"selected\"";
+        }
+        html += ">"+ i + "</option>";
+    }
+    return html
 }
 
 //Modifies the pull-down list for days according to what is selected for the month
@@ -287,27 +466,6 @@ function changeDays(day, month){
         addOption(day, "29", "29",false);
         addOption(day, "30", "30",false);
     } 
-}
-
-//Returns the number of days in a certain month
-function getMonthDays(month){
-	var monthDays = {
-			"January": 31,
-			"February": 28,
-			"March": 31,
-			"April": 30,
-			"May": 31,
-			"June": 30,
-			"July": 31,
-			"August": 31,
-			"September": 30,
-			"October": 31,
-			"November": 30,
-			"December": 31};
-	mon = month.options.selectedIndex;
-	console.log(mon)
-	return monthDays[mon];
-	
 }
 
 //Clears a drop-down list
