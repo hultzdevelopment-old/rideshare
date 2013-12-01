@@ -1,14 +1,27 @@
 var map;
 var autocomplete;
 var infoWindow;
-var marker;
 var geocoder;
 var windows = new Array();
+var rides = new Array();
 
 var mycollege = new College("Albright College","Reading, PA",40.360634,-75.909729);
 
 //Initializes the map
 function initialize() { 
+	
+	var request = new XMLHttpRequest();
+	var today = new Date();
+	request.open("GET","/getrides?year="+today.getFullYear()+"&month="+(today.getMonth()+1)+"&day="+today.getDate(),false);
+	request.send(null);
+	if (request.status == 200) {
+	    // loop over all
+	    rides = eval(request.responseText);
+	    for (r in rides) {
+	    	var tod = rides[r].ToD;
+	    	rides[r].ToD = new Date(tod.substring(0,4),tod.substring(5,7)-1,tod.substring(8,10));
+	    }
+	}
 	
 	//create map options and initialize the map
 	var mapOptions = { 
@@ -28,12 +41,13 @@ function initialize() {
 	
 	//initialize window, geocode, and marker objects
 	infoWindow = new google.maps.InfoWindow();
-	marker = new google.maps.Marker({
-		map: map
-	});
 	geocoder = new google.maps.Geocoder();
 	
 	putListener();
+	
+	for(var ride in rides){
+		addRideToMap(rides[ride], ride);
+	}
 }
 
 //open info window at specified position and with specified content
@@ -70,6 +84,13 @@ function showAddressClick(results, status){
         var point = results[0].geometry.location;
         windowOpen(point, getBeginRideHTML(point.lat(), point.lng(), results[0].formatted_address));
     }
+}
+
+//reverse geocodes an address from latLng and starts ride pop ups
+function showAddressSearchBox(){   
+	var place = autocomplete.getPlace();
+	var point = place.geometry.location;
+	windowOpen(point, getBeginRideHTML(point.lat(), point.lng(), place.formatted_address));   
 }
 
 
@@ -208,7 +229,7 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
 	//get all entered values from the user to verify correctness
 	var from = document.getElementById("textFrom").value;
     var to = document.getElementById("textTo").value;
-    var depart_time = document.getElementById("time-of-depart").value;
+    var earlylate = document.getElementById("earlylate").value;
     var partofday = document.getElementById("partofday").value;
     var month = document.getElementById("month").value;
     var day = document.getElementById("day").value;
@@ -216,8 +237,8 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
     var comment = document.getElementById("ridecomment").value;
     var number = document.getElementById("number").value;
     var driver_check = document.getElementById("driver").value;
-    
-    if(driver_check){
+
+    if(driver_check == 'true'){
     	var maxp = document.getElementById("maxp").value;
     } else {
     	var maxp = "3";
@@ -266,12 +287,12 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
         number = number.replace(/\./g,"");
     	number = number.slice(0, 3) + '-' + number.slice(3, 6) + '-' + number.slice(6);
     	
-        var html_code = getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, depart_time, partofday, month, day, year, comment);
+        var html_code = getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, earlylate, partofday, month, day, year, comment);
         windowOpen(new google.maps.LatLng(lat,lng), html_code);
     }      
 }
 
-function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, depart_time, partofday, month, day, year, comment){
+function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, earlylate, partofday, month, day, year, comment){
 	var vals = {};
     vals['lat'] = lat;
     vals['lng'] = lng;
@@ -279,7 +300,7 @@ function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp
     vals['to'] = to;
     vals['maxp'] = maxp;
     vals['contact'] = number;
-    vals['depart_time_time'] = depart_time;
+    vals['earlylate'] = earlylate;
     vals['partofday'] = partofday;
     vals['month'] = month;
     vals['day'] = day;
@@ -288,19 +309,17 @@ function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp
     vals['comment'] = comment;
 
     if (from == mycollege.name) {
-    	vals['toAlbright'] = false;
+    	vals['toCollege'] = false;
     } else {
-    	vals['toAlbright'] = true;
+    	vals['toCollege'] = true;
     }
-
-
-    var func_call = 'saveRide(' + JSON.stringify(vals)+')';
+    var func_call = 'saveRide(' + JSON.stringify(vals) + ')';
     var html = "";
     html += "<b>Is the following information correct?</b><br>";
     html += "<b>From:</b> " + from + "<br>";
     html += "<b>To:</b> " + to + "<br>";
     html += "<b>Departing:</b> ";
-    if (depart_time == 0) {
+    if (earlylate == 0) {
         html += "Early ";
     }
     else {
@@ -335,7 +354,7 @@ function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp
     return html;
 }
 
-//saves the ride and refreshs the map
+//saves the ride and refreshes the map
 function  saveRide(vals) {
     var request = new XMLHttpRequest();
     var reqStr = '/newride?';
@@ -344,9 +363,9 @@ function  saveRide(vals) {
     	reqStr += prop + "=" + vals[prop] + "&";
     }
 
-    request.open("GET",reqStr,false);
+    request.open("GET", reqStr, false);
     request.send(null);
-    clickListener = google.maps.event.addListener(map, "click", getAddress);
+    putListener();
     if (request.status == 200) {
     	initialize();
     } else {
@@ -354,27 +373,58 @@ function  saveRide(vals) {
     }
 }
 
-
-//Find the address entered in the search box and opens an info window
-function showAddress(){
-	infoWindow.close();
-	
-	var place = autocomplete.getPlace();
-	
-	if (place.geometry.viewport){
-		map.fitBounds(place.geometry.viewport);
-	} else {
-		map.setCenter(place.geometry.location);
-		map.setZoom(15);
-	}
-	
-	infoWindow.setPosition(place.geometry.location);
-	infoWindow.setContent('<div><strong>' + place.formatted_address + '</strong></div>');
-	infoWindow.open(map);
-	
-	google.maps.event.addListener(marker,'click', function(e){
-		infoWindow.open(map, marker);
-	});	
+//Adds ride markers to the map
+function addRideToMap(ride, rideNum){
+    if (ride.driver == "needs driver") {
+    	//ride needs a driver and is going from home to college
+    	if (ride.destination_title == mycollege.name) {
+    		var new_marker = new google.maps.Marker({
+    			position:new google.maps.LatLng(ride.start_point_lat, ride.start_point_long)
+    		});
+        
+    	//ride needs a driver and is going from college to home
+    	} else {
+    		var new_marker = new google.maps.Marker({
+    			position:new google.maps.LatLng(ride.destination_lat, ride.destination_long)
+    		});
+            
+    	}
+        google.maps.event.addListener(new_marker, "click", function(){
+        	if (new_marker.getPosition()) {
+        		windowOpen(new_marker.getPosition(), addDriverPopup(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
+        	}
+        });
+        
+        ride.marker = new_marker;
+        new_marker.setMap(map);
+    
+    //ride has a driver and is going from home to college
+    } else if (ride.destination_title == mycollege.name){
+    	var new_marker = new google.maps.Marker({
+    		position:new google.maps.LatLng(ride.start_point_lat, ride.start_point_long)
+    	});
+        google.maps.event.addListener(new_marker, "click", function(){
+        	if (new_marker.getPosition()) {
+        		windowOpen(new_marker.getPosition(), getPopupWindowMessage(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
+        	}
+        });
+        ride.marker = new_marker;
+        new_marker.setMap(map);
+    
+    //ride has a driver and is going from college to home
+    } else if (ride.start_point_title == mycollege.name) {
+        var new_marker = new google.maps.Marker({
+        	position:new google.maps.LatLng(ride.destination_lat, ride.destination_long)
+        });
+        google.maps.event.addListener(new_marker, "click", function(){
+        	if (new_marker.getPosition()) {
+        		windowOpen(new_marker.getPosition(),getPopupWindowMessage(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
+        	}
+        });
+        ride.marker = new_marker;
+        new_marker.setMap(map);
+    }
+    return ride.marker;
 }
 
 //Convience function to add a click listener to the map
