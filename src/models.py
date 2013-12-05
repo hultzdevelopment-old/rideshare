@@ -57,7 +57,7 @@ class Ride(ndb.Model):
         else:
             res['driver'] = "needs driver"
             
-        res['key'] = unicode(self.key)
+        res['key'] = self.key.urlsafe()
         res['passengers'] = [str(p) for p in self.passengers]
         return res
     

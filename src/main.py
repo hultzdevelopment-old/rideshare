@@ -6,6 +6,7 @@ import hmac
 import re
 import random
 import json
+import logging
 
 from datetime import date
 
@@ -80,6 +81,7 @@ class Handler(webapp2.RequestHandler):
         return t.render(params)
     
     def render(self, template, **kw):
+        logging.debug("Rendering template " + template)
         self.write(self.render_str(template, **kw)) 
         
     def set_secure_cookie(self, name, val):
@@ -108,7 +110,7 @@ Renders the map and the ride info table"""
 class MainHandler(Handler):
     def render_map(self, college="", user="",logout_url=""):
         self.render("main.html", college=college, user=user, logout_url=logout_url)
-        
+    
     def get(self):
         if self.user:   
             logout_url = users.create_logout_url('/logout')
@@ -178,11 +180,13 @@ class NewRideHandler(Handler):
         
 
         newRide.part_of_day = earlylate + ' ' + part_of_day
-        newRide.ToD = date(int(year),int(month),int(day))
+        newRide.ToD = date(int(year),int(month)+1,int(day))
         
         newRide.max_passengers = max_pass
         newRide.passengers = []
         
+        newRide.comment = self.request.get("comment") 
+               
         if isDriver:
             newRide.driver = str(self.user.userid)
             newRide.drivername = self.user.name
@@ -205,10 +209,8 @@ class NewRideHandler(Handler):
             passenger.put()
         
         #self.sendRideEmail(newRide)
-        self.redirect("/main")
         
     def sendRideEmail(self, ride):
-        logging.debug("Inside sendRideEmail")
         message = mail.EmailMessage()
         message.sender = rideshare_email
         message.subject = "New Ride Created"
@@ -254,19 +256,17 @@ class RideQueryHandler(Handler):
         - `self`:
 
         The query may be filtered by after date, and before date.  Expect to get the dates
-        in the form year, month, and day
+        in the form YYYY-MM-DD
         """
         # Create a query object
         allRides = Ride.query(ancestor=create_entity_parent('RideGroup'))
         # Check to see if the browser side provided us with before/after dates
-        after_y = self.request.get('year')
-        after_m = self.request.get('month')
-        after_d = self.request.get('day')
-        
+        after_date = self.request.get("after")
         before_date = self.request.get("before")
         # If there is an after date then limit the rides to those after the date
         # using the filter method
-        if after_y and after_m and after_d:
+        if after_date:
+            after_y,after_m,after_d = after_date.split('-')
             allRides.filter(Ride.ToD >= date(int(after_y),int(after_m),int(after_d)))
 
         if before_date:
@@ -276,7 +276,125 @@ class RideQueryHandler(Handler):
         # Now put together the json result to send back to the browser.
         json_result = json.dumps([r.to_dict() for r in allRides])
         self.response.headers.add_header('content-type','application/json')
-        self.response.out.write(json_result)
+        self.write(json_result)
+        
+class AddPassengerHandler(Handler): 
+    """
+    Handles addition of passengers
+    """
+    def get(self):
+        """
+          Called when adding a passenger to a ride
+      
+          Arguments:
+          - 'self'
+      
+        Web Arguments:
+          - ride-key
+          - contact
+          - location
+          - lat
+          - lng
+          """
+          
+        # The current user can add himself to the ride.  No need for this in the form.
+        user = self.user
+        
+        key = self.request.get('ride_key')
+        contact = self.request.get('contact')
+        location = self.request.get('location')
+        lat = float(self.request.get('lat'))
+        lng = float(self.request.get('lng'))
+    
+        ride_key = ndb.Key(urlsafe=key)
+        ride = ride_key.get()
+      
+        logout_url = users.create_logout_url('/logout')
+        
+        messages={}
+        
+        if ride == None: # Check if the ride was found
+            logging.debug("No Ride Found")
+            messages['NoRide'] = "The requested ride was not found in the database."
+        
+        # Check to see if the ride is full
+        elif ride.max_passengers == ride.num_passengers:
+            logging.debug("Not enough space on ride")
+            message['RideFull']= "The ride you are trying to join has been filled already."
+        
+        # Check if the current user is already on the ride
+        already = False
+        for p in ride.passengers:
+            if p.get().passid == user.userid:
+                already = True
+              
+        if already:
+            logging.debug("Already on the ride")
+            messages['ArePass'] = "You are already a part of this ride."            
+            
+        # Check if the current user is already the driver for the ride
+        elif user.userid == ride.driver:
+            logging.debug("Is currently the driver of this ride")
+            messages['AreDriver'] = "You can't be a passenger if you are the driver to this ride."
+        
+        else:
+            logging.debug("Ride joined successfully")
+            passenger = Passenger()
+            passenger.passid = user.userid
+            passenger.fullname = user.name
+            passenger.contact = contact
+            passenger.location = location
+            passenger.lat = lat
+            passenger.lng = lng
+            passenger.ride = ride_key
+            pass_key = passenger.put()
+        
+            ride.num_passengers = ride.num_passengers + 1
+            ride.passengers.append(pass_key)
+            ride.put()
+        
+        logging.debug(messages)
+        
+        json_result = json.dumps(messages)
+        self.response.headers.add_header('content-type','application/json')
+        self.write(json_result)
+
+        def sendDriverEmail(self,ride):
+            logging.debug(ride.driver)
+            driver = FBUser.get_by_key_name(ride.driver)
+            logging.debug(driver)
+            if not ride.driver:
+                return
+            if driver.loginType == "google":
+               to = driver
+            else:
+               logging.debug(ride.driver)
+               to = FBUser.get_by_key_name(ride.driver)
+               logging.debug(to)
+            sender = FROM_EMAIL_ADDR
+            subject = "New Passenger for your ride"
+            p = db.get(ride.passengers[-1])
+            user = FBUser.get_by_key_name(p.name)
+            body = """
+                Dear %s,
+                We wanted to let you know that %s has been added to your ride
+                from %s to %s on %s.  If you need to contact %s you can do so at %s.
+                
+                Thanks for being a driver!
+                
+                Sincerely,
+                
+                The Rideshare Team
+                """ % (to.nickname(), user.nickname(), ride.start_point_title, ride.destination_title,
+           ride.ToD, user.nickname(), p.contact)
+    
+            if driver.loginType == "google":
+              logging.debug(body)
+              mail.send_mail(sender,to.email,subject,body)
+            else:
+              graph = facebook.GraphAPI(to.access_token)
+              logging.debug(graph)
+              graph.put_object("me", "feed", message=body)
         
         
     
@@ -318,7 +436,6 @@ class LogoutHandler(Handler):
 class ErrorLoginHandler(Handler):
     """Called when the wrong email is used to login with.
     Redirects to a signout page and then back to the original login page"""
-
     def get(self):
         logout_url = users.create_logout_url('/')
         self.render("errorLoginPage.html", college = mycollege, logout = logout_url)
@@ -329,21 +446,22 @@ class HelpHandler(Handler):
     def get(self):
         if self.user:
             logout_url = users.create_logout_url('/logout')
-            self.logout()
             self.render("help.html", college = mycollege, logout_url = logout_url)
         else:
             self.redirect('/')
        
-        
+
+
 app = webapp2.WSGIApplication([
                                ('/', LoginHandler),
-                                    ('/errorLogin', ErrorLoginHandler),
+                               ('/errorLogin', ErrorLoginHandler),
                                ('/main', MainHandler),
                                ('/home', HomeHandler),
                                ('/logout', LogoutHandler),
                                ('/help', HelpHandler),
                                ('/newride', NewRideHandler),
-                               ('/getrides', RideQueryHandler)
+                               ('/getrides', RideQueryHandler),
+                               ('/addpass', AddPassengerHandler)
 ], debug=True)
 
 

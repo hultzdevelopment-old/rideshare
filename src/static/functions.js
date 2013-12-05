@@ -4,15 +4,16 @@ var infoWindow;
 var geocoder;
 var windows = new Array();
 var rides = new Array();
+var clickListener;
 
 var mycollege = new College("Albright College","Reading, PA",40.360634,-75.909729);
 
 //Initializes the map
-function initialize() { 
+function initialize(message) { 
 	
 	var request = new XMLHttpRequest();
 	var today = new Date();
-	request.open("GET","/getrides?year="+today.getFullYear()+"&month="+(today.getMonth()+1)+"&day="+today.getDate(),false);
+	request.open("GET","/getrides?after="+today.getFullYear()+"-"+(today.getMonth()+1)+"-"+today.getDate(), false);
 	request.send(null);
 	if (request.status == 200) {
 	    // loop over all
@@ -45,9 +46,64 @@ function initialize() {
 	
 	putListener();
 	
+	//clear the filter dates options
+	var begin_date = document.getElementById('begindate');
+	var end_date = document.getElementById('enddate');
+	begin_date.value = "";
+	end_date.value = "";
+	
+	
 	for(var ride in rides){
 		addRideToMap(rides[ride], ride);
 	}
+	
+	makeRideTable();
+	
+	if(typeof message == 'string'){
+		alert(message);
+	}
+
+}
+
+//Fill in table on main page that lists all ride information
+function makeRideTable() {
+    var table = document.getElementById("rideTableBody");
+    
+    //delete all table rows to recreate them
+    for(var i = table.rows.length; i > 0; i--) {
+    	table.deleteRow(i-1);
+    }
+   
+    for (var r in rides){
+    	var row = table.insertRow(table.rows.length);
+    	var col_0 = row.insertCell(0);
+        if (rides[r].drivername != null){
+        	col_0.innerHTML = '<a href="/driverrating?drivernum=' + rides[r].driver + '">'+ rides[r].drivername + '</a>';
+        } else {
+        	col_0.innerHTML= "needs driver";
+        }
+        
+        var col_1 = row.insertCell(1);
+        col_1.innerHTML = rides[r].max_passengers - rides[r].num_passengers;
+        
+        var col_2 = row.insertCell(2);
+        col_2.innerHTML = rides[r].start_point_title;
+        
+        var col_3 = row.insertCell(3);
+        if (rides[r].driver == "needs driver") {
+        	col_3.innerHTML = '<a href="#" onClick="addDriverToRideNumber(' + r + ')">' + rides[r].destination_title + '</a>';
+        } else {
+        	col_3.innerHTML = '<a href="#" onClick="joinRideByNumber(' + r + ')">' + rides[r].destination_title + '</a>';
+        }
+        var col_4 = row.insertCell(4);
+        var myToD = rides[r].ToD;
+        
+        col_4.innerHTML = rides[r].part_of_day + " " + convertMonthNum(myToD.getMonth()) + " " + 
+        					myToD.getDate() + ", " + myToD.getFullYear();
+        
+        var col_5 = row.insertCell(5);
+        col_5.innerHTML = rides[r].comment;
+    }
 }
 
 //open info window at specified position and with specified content
@@ -163,11 +219,11 @@ function startRideInfoPopup(lat, lng, address, eventID, isDriver, maxp, number){
 	windowOpen(new google.maps.LatLng(lat, lng), html_code);
 }
 
-//returns html form for complete ride info
+//returns html form for completing ride info
 function getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number){
 	maxp = (typeof maxp == 'undefined') ? '': maxp;
 	number = (typeof number == 'undefined') ? '': number; 
-    var html = "<b>Create a New Ride</b><hr>";
+    var html = "<b>Ride Info</b><hr>";
     
     html +="<div id=\"ride-info\">Please ensure that your address is as specific as possible<br>" +
     "(<i>37 </i> Main Street, not <i>30-50</i> Main Street)<br>"
@@ -218,14 +274,14 @@ function getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number){
     //additional comments and submit / cancel buttons
     html += "<div id=\"comments\"><br>Comments: <input type=\"text\" id=\"ridecomment\" name=\"ridecomment\" size=\"50\"></div>"
     html += "<div id=\"buttons\"><input type=\"submit\" id=\"submit\" name=\"submit\" " + 
-    "value=\"Okay\" onclick=\"verifyRideInfo("+ lat +", "+ lng +", '"+ address +"', "+ eventID + ", " + isDriver +"); return false;\"'>" + 
+    "value=\"Okay\" onclick=\"verifyRideInfo("+ lat +", "+ lng +", '"+ address +"', "+ eventID +"); return false;\"'>" + 
     "<input type=\"button\" id=\"cancel\" name='cancel' value='Cancel' onclick='windows.pop().close(); putListener();'></div>" + 
     "<input type=\"hidden\" name=\"driver\" id=\"driver\" value=\""+ isDriver +"\">";
     
     return html	
 }
 
-function verifyRideInfo(lat, lng, address, eventID, isDriver){
+function verifyRideInfo(lat, lng, address, eventID){
 	//get all entered values from the user to verify correctness
 	var from = document.getElementById("textFrom").value;
     var to = document.getElementById("textTo").value;
@@ -237,7 +293,7 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
     var comment = document.getElementById("ridecomment").value;
     var number = document.getElementById("number").value;
     var driver_check = document.getElementById("driver").value;
-
+    
     if(driver_check == 'true'){
     	var maxp = document.getElementById("maxp").value;
     } else {
@@ -248,6 +304,7 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
     goodContact = validatePhoneNumber(number);
     
     var currentTime = new Date();
+    currentTime.setHours(0,0,0,0);
     var rideDate = new Date(year, month, day);
     
     //make sure that the number of passengers is just numbers
@@ -271,11 +328,12 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
     	
     }
     // Ensure maxp is filled
-    else if (isDriver && (maxp == '' || badmaxp)) {
+    else if (driver_check == 'true' && (maxp == '' || badmaxp)) {
         alert("Please supply a valid maximum number of passengers.");
         
     }
     // test date.. make sure it is in the future
+    
     else if (rideDate < currentTime) {
     	alert("The date for a ride must be in the future " + rideDate);
     	
@@ -287,7 +345,7 @@ function verifyRideInfo(lat, lng, address, eventID, isDriver){
         number = number.replace(/\./g,"");
     	number = number.slice(0, 3) + '-' + number.slice(3, 6) + '-' + number.slice(6);
     	
-        var html_code = getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp, number, earlylate, partofday, month, day, year, comment);
+        var html_code = getConfirmInfoHTML(lat, lng, address, eventID, driver_check, from, to, maxp, number, earlylate, partofday, month, day, year, comment);
         windowOpen(new google.maps.LatLng(lat,lng), html_code);
     }      
 }
@@ -314,6 +372,8 @@ function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp
     	vals['toCollege'] = true;
     }
     var func_call = 'saveRide(' + JSON.stringify(vals) + ')';
+
+    
     var html = "";
     html += "<b>Is the following information correct?</b><br>";
     html += "<b>From:</b> " + from + "<br>";
@@ -347,10 +407,9 @@ function getConfirmInfoHTML(lat, lng, address, eventID, isDriver, from, to, maxp
     } else {
     	html += from;
     }
-    
-    
+
     html += "', " + eventID + ", " + isDriver + ", " + maxp + ", '" + number +"');\"/></form>";
-    
+  
     return html;
 }
 
@@ -405,7 +464,7 @@ function addRideToMap(ride, rideNum){
     	});
         google.maps.event.addListener(new_marker, "click", function(){
         	if (new_marker.getPosition()) {
-        		windowOpen(new_marker.getPosition(), getPopupWindowMessage(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
+        		windowOpen(new_marker.getPosition(), viewRideInfo(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
         	}
         });
         ride.marker = new_marker;
@@ -418,13 +477,189 @@ function addRideToMap(ride, rideNum){
         });
         google.maps.event.addListener(new_marker, "click", function(){
         	if (new_marker.getPosition()) {
-        		windowOpen(new_marker.getPosition(),getPopupWindowMessage(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
+        		windowOpen(new_marker.getPosition(),viewRideInfo(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
         	}
         });
         ride.marker = new_marker;
         new_marker.setMap(map);
     }
     return ride.marker;
+}
+
+
+
+//Returns the HTML to be contained in a popup window in the GMap
+//Asks whether the user wants to join this ride
+function viewRideInfo(ride, rideNum, lat, lng){
+/*
+* ride -- a full ride object as constructed in index.html
+* rideNum  - the index of the ride in the rides array in index.html
+* lat -- latitude
+* lng -- longitude 
+*/
+	var msg;
+	var space_left = ride.max_passengers - ride.num_passengers;
+	
+	if (space_left < 1){
+		msg = "This ride is full";
+	} else if (space_left == 1) {
+		msg = "Can take " + space_left + " more person";
+	} else {
+		msg = "Can take " + space_left + " more people";
+	}
+	
+	var disabled;
+	var today = new Date();
+
+	if ((ride.ToD - new Date(today.getFullYear(), today.getMonth(), today.getDate())) == 0){
+		disabled = "disabled=\"disabled\"";
+		msg = "It is too late to join this ride. <br>You might try to call the driver directly at: " + ride.contact;
+	} else if (ride.max_passengers <= ride.num_passengers) {
+		disabled = "disabled=\"disabled\"";
+	} else {
+		disabled = "";
+	}
+	
+	var text1 = ("Driver: " + ride.drivername + "<br><i>" + ride.start_point_title + "</i> --> <i>" + ride.destination_title + 
+			"</i><br>Departure Time: " + ride.part_of_day + " " + convertMonthNum(ride.ToD.getMonth()) + " " + 
+			ride.ToD.getDate() + ", " + ride.ToD.getFullYear() + "<br>" + msg);
+
+	text1 += "<br>" + ride.comment + "<br>";
+
+	var text2 = ("<br /><form id=\"addPass\" onsubmit=\"addPassengerPopup(" + rideNum + ", " + 
+			lat + ", " + lng + "); return false;\"><input type=\"submit\" value=\"Join this Ride\"" + disabled + "/></form>");
+ 
+	var result = text1 + text2;
+	return result;
+}
+
+function addPassengerPopup(rideNum, lat, lng, number){
+	var html_code = addPassengerPopupHTML(rideNum, lat, lng, number);
+	windowOpen(new google.maps.LatLng(lat, lng), html_code);
+}
+
+function addPassengerPopupHTML(rideNum, lat, lng, number){
+	number = (typeof number == 'undefined') ? '': number; 
+    var html = "<b>Ride Info</b><hr>";
+    
+    html +="<div id=\"ride-info\">Please ensure that your address is as specific as possible<br>" +
+    "(<i>37 </i> Main Street, not <i>30-50</i> Main Street)<br>"
+    
+  //check to see the order of the destinations and fill in From and To
+    var to = rides[rideNum].destination_title;
+    var from = rides[rideNum].start_point_title;
+    
+    html += "<div id=\"from-text\">From <input type=\"text\" id=\"textFrom\" name=\"textFrom\" size=\"50\" value=\"" +
+    		from + "\" readonly=\"readonly\"></div>";
+    
+    html += "<div id=\"to-text\">To <input type=\"text\" id=\"textTo\" name=\"textTo\" size=\"50\" value=\"" + 
+    		to + "\" readonly=\"readonly\"><br></div>";
+    
+    html += "<div id=\"max-pass\"> Maximum number of passengers: " + rides[rideNum].max_passengers + "<br></div>";
+
+    
+    //contact phone number
+    html += "<div id=\"phone-num\">Contact Phone Number: " + 
+    	"<input type=\"text\" name=\"number\" id=\"number\" value=\"" + number + "\" maxlength=\"12\" size=\"10\"></div>";
+    
+    //time of departure
+    html += "<div id=\"time-of-depart\">Time of departure: <br>" + rides[rideNum].ToD + "</div>";
+    
+    //submit & cancel buttons
+    html += "<div id=\"buttons\"><input type=\"submit\" id=\"submit\" name=\"submit\" " + 
+    "value=\"Okay\" onclick=\"verifyAddPassenger(" + rideNum + ", " + lat + ", " + lng +"); return false;\"'>" + 
+    "<input type=\"button\" id=\"cancel\" name='cancel' value='Cancel' onclick='windows.pop().close(); putListener();'></div>"
+    
+    return html;
+}
+
+//make sure the new passenger entered in the corect information
+function verifyAddPassenger(rideNum, lat, lng){
+	var number = document.getElementById("number").value;
+	
+	var goodContact = false;
+    goodContact = validatePhoneNumber(number);
+    
+  //Ensure valid number is supplied
+    if (! goodContact){
+        alert("Please supply a valid ten-digit contact number.");  
+    } else {
+    	number = number.replace(/-/g,"");
+        number = number.replace(/ /g,"");
+        number = number.replace(/\./g,"");
+    	number = number.slice(0, 3) + '-' + number.slice(3, 6) + '-' + number.slice(6);
+        var html_code = getConfirmPassengerHTML(rideNum, lat, lng, number);
+        windowOpen(new google.maps.LatLng(lat,lng), html_code);
+    }      
+}
+
+function getConfirmPassengerHTML(rideNum, lat, lng, contact){
+	var args = {};
+	args['lat'] = lat;
+	args['lng'] = lng;
+	args['location'] = rides[rideNum].destination_title;
+	args['contact'] = contact;
+	
+	var ride_key = (rides[rideNum].key).replace(/'/g, '"');
+	args['ride_key'] = ride_key;
+	
+	var func_call = 'saveNewPass(' + JSON.stringify(args) + ')';
+
+	
+	var html = '';
+	html += '<b>Is the following information correct?</b><br>';
+	html += '<b>From:</b> ' + rides[rideNum].start_point_title + '<br>';
+	html += '<b>To:</b> ' + rides[rideNum].destination_title + '<br>';
+	html += '<b>Departing:</b> ' + rides[rideNum].ToD + '<br>';
+	html += '<b>Contact Number:</b> ' + contact + '<br>';
+	
+	html += '<form>';
+	html += '<input type="button" id="pass_submit" name="pass_submit" value="Submit" onclick=\'' + func_call + '\'>';
+	html += "<input type='button' id='pass_back' name='pass_submit' value='Back' onclick='addPassengerPopup(" +
+			rideNum + ", " + lat + ", " + lng + ", \"" + contact + "\")'></form>";
+
+	return html;
+}
+
+function saveNewPass(vals) {
+
+    var request = new XMLHttpRequest();
+    var reqStr = '/addpass?';
+
+    for (var prop in vals) {
+    	reqStr += prop + "=" + vals[prop] + "&";
+    }
+
+    request.open("GET", reqStr, false);
+    request.send(null);
+    putListener();
+    
+    var messages = new Array();
+    
+    if (request.status == 200) {
+    	messages = eval('(' + request.responseText + ')');
+    	for (mess in messages){
+    		var response_mess = messages[mess]
+    	}
+    	initialize(response_mess);
+    } else {
+    	alert("An error occurred, check your responses and try again.");
+    }
+
+}
+
+//Filter the markers on the map to only show rides between the two dates shown
+function filterRides(){
+	var $begin = $("#begindate").datepicker("getDate");
+    var $end = $("#enddate").datepicker("getDate");
+    var iDate = new Date($begin.getFullYear(),$begin.getMonth(),$begin.getDate());
+    var fDate = new Date($end.getFullYear(),$end.getMonth(),$end.getDate());
+
+    for(var r in rides){
+    	if (rides[r].ToD < iDate || rides[r].ToD > fDate){
+    		rides[r].marker.setMap(null);
+        }    
+    }	
 }
 
 //Convience function to add a click listener to the map
@@ -435,7 +670,7 @@ function putListener(){
 //Changes a numerical month returned from a Date object to a String
 function convertMonthNum(index){
     var monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    return monthList[index-1];
+    return monthList[index];
 }
 
 //Validates that the phone number is 10 digits long 
@@ -457,7 +692,7 @@ function getMonthOptions() {
     var monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var html = "";
     for (var i=0; i < monthList.length; i++) {
-    	html += '<option value="'+(i+1)+'" ';
+    	html += '<option value="'+(i)+'" ';
     	if (today.getMonth() == i) {
     		html += 'selected="true" ';
     	}
