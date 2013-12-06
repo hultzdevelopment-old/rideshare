@@ -33,6 +33,7 @@ rideshare_website = "www.albrightrideshare.appspot.com"
 
 DEFAULT_GROUP_NAME = 'albright'
 
+
 """Used mainly to make cookie values secure"""
 def make_secure_val(val):
     return '%s|%s' % (val, hmac.new(secret, val).hexdigest())
@@ -60,7 +61,10 @@ def create_entity_parent(entity_group, group_name = DEFAULT_GROUP_NAME):
 
 """Global query to see what the college information is.
 Also makes sure that the datastore actually contains the college info"""
+
 college_query = College.query()
+logging.debug(college_query)
+
 if college_query.count()==0:
     mycollege = College(parent=create_entity_parent('CollegeGroup','mycollege'))
     mycollege.name="Albright College"
@@ -308,8 +312,6 @@ class AddPassengerHandler(Handler):
     
         ride_key = ndb.Key(urlsafe=key)
         ride = ride_key.get()
-      
-        logout_url = users.create_logout_url('/logout')
         
         messages={}
         
@@ -395,6 +397,66 @@ class AddPassengerHandler(Handler):
               graph = facebook.GraphAPI(to.access_token)
               logging.debug(graph)
               graph.put_object("me", "feed", message=body)
+              
+class AddDriverHandler(Handler): 
+    """
+    Handles addition of a new driver
+    """
+    def get(self):
+        """
+          Called when adding a passenger to a ride
+      
+          Arguments:
+          - 'self'
+      
+        Web Arguments:
+          - ride-key
+          - contact
+          - numPass
+          """
+        user = self.user
+        
+        key = self.request.get('key')
+        contact = self.request.get('contact')
+        numPass = self.request.get('numpass')
+    
+        ride_key = ndb.Key(urlsafe=key)
+        ride = ride_key.get()
+        
+        messages={}
+        
+        if ride == None: # Check if the ride was found
+            logging.debug("No Ride Found")
+            messages['NoRide'] = "The requested ride was not found in the database."
+    
+        # Check if the current user is already on the ride
+        already = False
+        for p in ride.passengers:
+            if p.get().passid == user.userid:
+                already = True
+              
+        if already:
+            logging.debug("Already on the ride")
+            messages['ArePass'] = "You are already a passenger of this ride."            
+            
+        # Check if the current user is already the driver for the ride
+        elif user.userid == ride.driver:
+            logging.debug("Is currently the driver of this ride")
+            messages['AreDriver'] = "You already are the driver for this ride"
+        
+        else:
+            logging.debug("Ride joined successfully")
+            ride.driver = user.userid
+            ride.drivername = user.name
+            ride.contact = contact
+            ride.max_passengers = int(numPass)
+            ride.put()
+        
+        logging.debug(messages)
+        
+        json_result = json.dumps(messages)
+        self.response.headers.add_header('content-type','application/json')
+        self.write(json_result)
         
         
     
@@ -461,7 +523,8 @@ app = webapp2.WSGIApplication([
                                ('/help', HelpHandler),
                                ('/newride', NewRideHandler),
                                ('/getrides', RideQueryHandler),
-                               ('/addpass', AddPassengerHandler)
+                               ('/addpass', AddPassengerHandler),
+                               ('/adddriver', AddDriverHandler)
 ], debug=True)
 
 

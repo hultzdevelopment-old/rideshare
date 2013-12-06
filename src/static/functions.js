@@ -108,17 +108,19 @@ function makeRideTable() {
 
 //open info window at specified position and with specified content
 function windowOpen(pos, con){
+	
     var window = new google.maps.InfoWindow({position:pos, content:con});
+    google.maps.event.removeListener(clickListener);
     
     google.maps.event.addListener(window,"closeclick",function(){
              putListener();
              });
-    google.maps.event.removeListener(clickListener);
     
-    if (windows.length !=0){
+    if (windows.length != 0){
          windows.pop().close();
-         windows.push(window);
+         windows.push(window);     
          window.open(map);
+         
     } else {
         windows.push(window);
         window.open(map);        
@@ -159,14 +161,9 @@ function getBeginRideHTML(lat, lng, address){
     return html;
 }
 
-//opens the window to create a new ride
-function startRideCreationPopup(lat, lng, address){
-	var html_code = getRideCreationHTML(lat, lng, address);
-	windowOpen(new google.maps.LatLng(lat, lng), html_code);
-}
 
-//returns new ride creation html form that decides the direction of the ride
-function getRideCreationHTML(lat, lng, address){
+//creates the new ride creation html form that decides the direction of the ride
+function startRideCreationPopup(lat, lng, address){
     var html = "<b>Create a New Ride</b><hr>";
 
     html += "<form><p style=\"text-align: left;\">";
@@ -181,17 +178,11 @@ function getRideCreationHTML(lat, lng, address){
     
     html += mycollege.name + "</b></p></form>";
 
-    return html;
+    windowOpen(new google.maps.LatLng(lat, lng), html);
 }
 
-//opens the window to determine if passenger or driver
+//popup following ride creation for determining passenger or driver
 function startPassengerOrDriverPopup(lat, lng, address, eventID){
-	var html_code = getPassengerOrDriverHTML(lat, lng, address, eventID);
-	windowOpen(new google.maps.LatLng(lat, lng), html_code);
-}
-
-//returns html form for determining passenger or driver
-function getPassengerOrDriverHTML(lat, lng, address, eventID){
     var html = "<b>Create a New Ride</b><hr>";
 
     html += "<form><p>";
@@ -210,17 +201,11 @@ function getPassengerOrDriverHTML(lat, lng, address, eventID){
     	html += "<p>From:<br> " + address + "<br>To: <br>" + mycollege.name
     }
     
-    return html;
+    windowOpen(new google.maps.LatLng(lat, lng), html);
 }
 
-//opens the window to fill in all ride info
+//popup window that collects the rest of the ride info
 function startRideInfoPopup(lat, lng, address, eventID, isDriver, maxp, number){
-	var html_code = getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number);
-	windowOpen(new google.maps.LatLng(lat, lng), html_code);
-}
-
-//returns html form for completing ride info
-function getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number){
 	maxp = (typeof maxp == 'undefined') ? '': maxp;
 	number = (typeof number == 'undefined') ? '': number; 
     var html = "<b>Ride Info</b><hr>";
@@ -278,7 +263,7 @@ function getRideInfoHTML(lat, lng, address, eventID, isDriver, maxp, number){
     "<input type=\"button\" id=\"cancel\" name='cancel' value='Cancel' onclick='windows.pop().close(); putListener();'></div>" + 
     "<input type=\"hidden\" name=\"driver\" id=\"driver\" value=\""+ isDriver +"\">";
     
-    return html	
+    windowOpen(new google.maps.LatLng(lat, lng), html);	
 }
 
 function verifyRideInfo(lat, lng, address, eventID){
@@ -448,14 +433,14 @@ function addRideToMap(ride, rideNum){
     		});
             
     	}
+    	
         google.maps.event.addListener(new_marker, "click", function(){
         	if (new_marker.getPosition()) {
         		windowOpen(new_marker.getPosition(), addDriverPopup(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
         	}
         });
         
-        ride.marker = new_marker;
-        new_marker.setMap(map);
+        
     
     //ride has a driver and is going from home to college
     } else if (ride.destination_title == mycollege.name){
@@ -467,8 +452,7 @@ function addRideToMap(ride, rideNum){
         		windowOpen(new_marker.getPosition(), viewRideInfo(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
         	}
         });
-        ride.marker = new_marker;
-        new_marker.setMap(map);
+        
     
     //ride has a driver and is going from college to home
     } else if (ride.start_point_title == mycollege.name) {
@@ -480,10 +464,14 @@ function addRideToMap(ride, rideNum){
         		windowOpen(new_marker.getPosition(),viewRideInfo(ride, rideNum, new_marker.getPosition().lat(), new_marker.getPosition().lng()));
         	}
         });
-        ride.marker = new_marker;
-        new_marker.setMap(map);
+        
     }
+    
+    ride.marker = new_marker;
+    new_marker.setMap(map);
+    
     return ride.marker;
+    
 }
 
 
@@ -533,12 +521,21 @@ function viewRideInfo(ride, rideNum, lat, lng){
 	return result;
 }
 
-function addPassengerPopup(rideNum, lat, lng, number){
-	var html_code = addPassengerPopupHTML(rideNum, lat, lng, number);
-	windowOpen(new google.maps.LatLng(lat, lng), html_code);
+//allows passengers to join based on ride number
+function joinRideByNumber(rideNum) {
+    rides[rideNum].marker.setMap(null);
+    rides[rideNum].marker=null;
+    var marker = addRideToMap(rides[rideNum], rideNum);
+    
+    windowOpen(marker.getPosition(),viewRideInfo(rides[rideNum], 
+						    rideNum, 
+						    rides[rideNum].destination_lat,
+						    rides[rideNum].destination_long));
 }
 
-function addPassengerPopupHTML(rideNum, lat, lng, number){
+
+//popup to get new passengers info 
+function addPassengerPopup(rideNum, lat, lng, number){
 	number = (typeof number == 'undefined') ? '': number; 
     var html = "<b>Ride Info</b><hr>";
     
@@ -570,7 +567,7 @@ function addPassengerPopupHTML(rideNum, lat, lng, number){
     "value=\"Okay\" onclick=\"verifyAddPassenger(" + rideNum + ", " + lat + ", " + lng +"); return false;\"'>" + 
     "<input type=\"button\" id=\"cancel\" name='cancel' value='Cancel' onclick='windows.pop().close(); putListener();'></div>"
     
-    return html;
+    windowOpen(new google.maps.LatLng(lat, lng), html);
 }
 
 //make sure the new passenger entered in the corect information
@@ -593,6 +590,7 @@ function verifyAddPassenger(rideNum, lat, lng){
     }      
 }
 
+//confirm info with passenger and then save the new addition
 function getConfirmPassengerHTML(rideNum, lat, lng, contact){
 	var args = {};
 	args['lat'] = lat;
@@ -621,6 +619,7 @@ function getConfirmPassengerHTML(rideNum, lat, lng, contact){
 	return html;
 }
 
+//call addpass handler to create passenger in the datastore and add to the ride
 function saveNewPass(vals) {
 
     var request = new XMLHttpRequest();
@@ -634,10 +633,8 @@ function saveNewPass(vals) {
     request.send(null);
     putListener();
     
-    var messages = new Array();
-    
     if (request.status == 200) {
-    	messages = eval('(' + request.responseText + ')');
+    	var messages = eval('(' + request.responseText + ')');
     	for (mess in messages){
     		var response_mess = messages[mess]
     	}
@@ -646,6 +643,95 @@ function saveNewPass(vals) {
     	alert("An error occurred, check your responses and try again.");
     }
 
+}
+
+//creates the popup for  a ride that needs a driver
+function addDriverPopup(ride, rideNum, lat, lng) {
+
+    ride.rideNum = rideNum;
+    
+    var htmlText = '<div id="driver_needed"><b>Driver Needed</b> <br>';
+    htmlText += "{start_point_title} --> {destination_title}<br>";
+    htmlText += "{part_of_day} {ToD}<br>";
+    htmlText += "Number of Passengers so far: {num_passengers} <br>"
+    htmlText += '<input type="radio" name="driver" value="0" onclick="getDriverContact({rideNum});">I will drive<br>';
+    htmlText += '<input type="radio" name="rider" value="0" onclick="joinRideByNumber({rideNum});">I need a ride too</div>';
+
+    var template_html = jsontemplate.Template(htmlText);
+    var html_code = template_html.expand(ride);
+    
+    return html_code
+}
+
+//adds a driver to whichever ride number is specified
+function addDriverToRideNumber(rideNum) {
+    rides[rideNum].marker.setMap(null);
+    rides[rideNum].marker=null;
+    var marker = addRideToMap(rides[rideNum], rideNum);
+    
+    windowOpen(marker.getPosition(),addDriverPopup(rides[rideNum], rideNum, 
+    								rides[rideNum].destination_lat, rides[rideNum].destination_long));
+}
+
+//get all of the drivers contact info before adding to the new ride
+function getDriverContact(rideNum) {
+    var ride = rides[rideNum];
+    var htmlText = "Thanks for driving!<br><hr>";
+    htmlText += 'From: {start_point_title} <br>'
+    htmlText += 'To: {destination_title} <br>'
+    htmlText += 'Contact number:  <input type="text" id="drivercontact" name="dcontact" value="" ><br>';
+    htmlText += 'Total number of passengers:  <input type="text" id="numpass" name="numpass" value="" ><br>';
+    htmlText += 'Time of Departure: <br> {ToD} <br>'
+    htmlText += '<input type="button" name="OK" value="OK" onclick="verifyNewDriver({rideNum});">';
+    htmlText += '<input type="button" name="Cancel" value="Cancel" onclick="windows.pop().close(); putListener();">';
+
+    var template_html = jsontemplate.Template(htmlText);
+    var html_code = template_html.expand(ride);
+    ride.marker.setMap(null);
+    ride.marker=null;
+    var marker = addRideToMap(rides[rideNum], rideNum);
+    windowOpen(marker.getPosition(),html_code);  
+}
+
+//make sure the driver entered in all the data correctly
+function verifyNewDriver(rideNum){
+	var driverContact = document.getElementById("drivercontact").value;
+    var numPass = document.getElementById("numpass").value;
+    
+    var ride = rides[rideNum];
+    
+    if (numPass < ride.num_passengers){
+    	alert("The number of passengers must be at least as many as are already on the ride.")
+    } 
+    else if (/[^0-9-]+/.test(numPass)) {
+    	alert("Please enter valid info for number of passengers.")	
+    } else if (!(validatePhoneNumber(driverContact))){
+    	alert("Please supply a valid 10-digit contact number");
+    } else {
+    	submitDriverForRide(rides[rideNum], driverContact, numPass);
+    }
+}
+
+
+//send the info to handler to update datastore ride
+function submitDriverForRide(ride, driverContact, numPass){
+	var request = new XMLHttpRequest();
+	
+    var reqStr = '/adddriver?key=' +ride.key + '&contact=' + driverContact + '&numpass=' + numPass;
+    
+    request.open("GET", reqStr, false);
+    request.send(null);
+    putListener();
+    
+    if (request.status == 200) {
+    	var messages = eval('(' + request.responseText + ')');
+    	for (mess in messages){
+    		var response_mess = messages[mess]
+    	}
+    	initialize(response_mess);
+    } else {
+    	alert("An error occurred, check your responses and try again.");
+    }
 }
 
 //Filter the markers on the map to only show rides between the two dates shown
