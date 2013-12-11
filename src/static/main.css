@@ -1,55 +1,277 @@
+html, body {
+	height: 100%;
+}
+
 body {
-	width: 70%;
-	margin: 0 auto;
+	width: 90%;
+	margin: 0 auto 0 auto;
 	padding: 10px;
-	background: #FFFFFF;
+	background: lightgray;
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 12px;
-	color: #787878;
+	font-size: .9em;
+	color: black;
 	
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4{
 	margin: 0;
 	padding: 0;
-	font-weight: normal;
-	color: #32639A;
 }
-
-h1 {
-	font-size: 2em;
-}
-
-h2 {
-	font-size: 2.4em;
-}
-
-h3 {
-	font-size: 1.6em;
-}
-
-p, ul, ol {
+	
+p, ol, ul{
 	margin-top: 0;
+}
+	
+ol, ul{
+	padding: 0;
+	list-style: none;
+}
+	
+p{
 	line-height: 180%;
 }
-
-a {
+	
+strong{
+}
+	
+a{
+	color: #383838;
 	text-decoration: none;
-	color: #4486C7;
+}
+	
+a:hover{
 }
 
-#map-canvas {
-	height: 500px;	
-}
-		
-#ride-table {
-	width: 100%;
+.container
+	{
+		width: 1200px;
+		margin: 0px auto;
+	}
+
+/*********************************************************************************/
+/* Header                                                                        */
+/*********************************************************************************/
+
+#header{
+	background: darkRed;
 }
 
-.centered-cell {
+/*********************************************************************************/
+/* Login                                                                         */
+/*********************************************************************************/
+
+#login-logo{
+	background: white;
+	border-bottom: solid black;
+	padding: 2em 0em;
+	text-transform: uppercase;
+}
+
+#login-logo h1{
+	text-align: center;
+	font-weight: 900;
+	font-size: 2.5em;
+}
+	
+#login-logo h1 {
+	color: darkRed;
+}
+
+#login-logo span{
+	padding: 0em 0em 0em 0.5em;
+}
+
+
+#login-content {
+	background: white;
+	padding: 1.5em;
+}
+
+#login-content a {
+	color: blue;
+}
+
+#login-content a:hover {
+	text-decoration: underline;
+}
+
+/*********************************************************************************/
+/* Logo                                                                          */
+/*********************************************************************************/
+
+#logo{
+	padding: 2em 0em;
+	background: #FFF;
+	text-transform: uppercase;
+}
+
+#logo h1{
+	text-align: center;
+	font-weight: 900;
+	font-size: 2.5em;
+}
+	
+#logo h1 {
+	color: darkRed;
+}
+
+#logo span{
+	padding: 0em 0em 0em 0.5em;
+}
+	
+#logo h1:before{	
+}
+	
+#logo a {
+	color: darkRed;
+}
+
+/*********************************************************************************/
+/* Footer                                                                        */
+/*********************************************************************************/
+
+#footer{
+	padding: 1em 0em;
+	text-transform: uppercase;
+}
+
+#footer h3{
+	color: darkRed;
+	text-align: center;
+	font-weight: 900;
+	font-size: 1em;
+}
+
+#footer span{
+	padding: 0em 0em 0em 0.5em;
+}
+	
+
+/*********************************************************************************/
+/* Menu                                                                          */
+/*********************************************************************************/
+
+#menu ul{
+	margin: 0;
+	padding: 10px 0px 10px 0px;
+	list-style: none;
+	line-height: normal;
 	text-align: center;
 }
-
-.ride-comment {
-	text-align: left;
+	
+#menu li{
+	display: inline-block;
 }
+	
+#menu a{
+	display: block;
+	padding: 1em 3em;
+	letter-spacing: 1px;
+	text-decoration: none;
+	text-transform: uppercase;
+	font-size: 1em;
+	font-weight: 700;
+	color: #FFF;
+}
+
+#menu a:hover {
+	text-decoration: underline;
+}
+
+#welcome-message {
+	display: block;
+	padding: 1em 3em;
+	letter-spacing: 1px;
+	text-decoration: none;
+	font-size: 1em;
+	font-weight: 700;
+	color: #FFF;
+}
+
+/*********************************************************************************/
+/* Info and Controls                                                             */
+/*********************************************************************************/
+
+#info-and-controls {
+	background-color: white;
+}
+#info-and-controls h4 {
+	padding-bottom: .5em;
+}
+
+#info-and-controls td {
+	padding: .5em;
+}
+
+#general-info {
+	border-right: solid 2px;
+	width: 60%;
+}
+
+
+/*********************************************************************************/
+/* Main Page Ride Header                                                         */
+/*********************************************************************************/
+
+#rides-header{
+	padding: 2em 0em;
+	background: #FFF;
+	text-transform: uppercase;
+}
+
+#rides-header h2{
+	text-align: center;
+	font-weight: 900;
+	font-size: 2em;
+	color: darkRed;
+}
+
+#rides-header h4{
+	text-align: center;
+	font-weight: 900;
+	font-size: 1em;
+	color: darkRed;
+}
+
+#rides-header span{
+	padding: 0em 0em 0em 0.5em;
+}
+
+/*********************************************************************************/
+/* Ride Tables                                                                   */
+/*********************************************************************************/
+
+.ride-table {
+	width: 100%;
+	text-align: center;
+	border-collapse:collapse;
+	background-color: white;
+}
+
+.ridelist table, .ridelist th, .ridelist td {
+	border: 1px solid black;
+}
+
+.ride-table th {
+	background-color: darkRed;
+	color: white;
+}
+
+.ridelist h2, .ridelist h4 {
+	padding: 1em;
+}
+
+.ridelist p {
+	margin-left: 2.5em;
+}
+
+/*********************************************************************************/
+/* Map                                                                           */
+/*********************************************************************************/
+
+#map-canvas {
+	border-top: .2em solid;
+	border-bottom: .2em solid;
+	height: 500px;
+}
+		

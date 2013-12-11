@@ -30,93 +30,94 @@
 	</head>
 
 	<body>
-		<div class="header">
-	    	<div class="logo">
-	    		<h1><a href="/main">{{college.name}} Rideshare</a></h1>
-	        </div>
-	        <div class="welcome-message">
-	        	Welcome, {{user}}
-	        </div>
-	      	<div class="menu">
-	        	<ul>
-					<li><a href="/home">Your Rides</a></li>
-					<li><a href="{{logout_url}}">Sign out</a></li>
-					<li><a href="/help">Help</a></li>
-	        	</ul>
-	      	</div>
-		</div>
+	<div id="logo">
+		<h1><a href="/main"><span>{{college.name}} Rideshare</span></a></h1>
+	</div>
+	<div id="header">
+		<div id="menu" class="container">
+	    	<ul>
+	       		<li><span id="welcome-message">Welcome, {{user}}</span></li>
+	       		<li><a href="/main">Main Page</a>
+	        	<li><a href="/home">My Rides</a></li>
+	        	<li><a href="/help">Help</a></li>
+				<li><a href="{{logout_url}}">Sign out</a></li>
+	        </ul>
+	      </div>
+	</div>
 		
-		<div class="search-rides">
-			<table>
-				<tr>
-					<td width="50%">
-						Click anywhere on the map to create a
-			            destination or starting point. You may want to zoom in first. You can
-			            add yourself to a ride by clicking on one of the red or
-			            green pushpins on the map.  <br><br>
-			            Enter an address or filter the pushpins by date using the
-			            controls on the right.
-					</td>
+	<div id="info-and-controls">
+		<table>
+			<tr>
+				<td id="general-info">
+					<h4>General Info</h4>
+					Click anywhere on the map to start creating a ride. You can create a ride whether you are
+					driving or are looking for a driver.You may want to zoom in first so you can pick the
+					right address. You can add yourself to a ride (whether as a driver or passenger)
+					by clicking on one of the red or green markers on the map.  <br><br>
+			        Instead of clicking on the map, you can enter a specific address in the search box to the right
+			        and clicking create ride will begin the ride creation process at the correct location for you.
+			            
+			        You can also filter the rides on the map using the controls on the right.  Specify a beginning
+			        and ending date for the time you are looking for a ride and the filter will only show rides on the 
+			        map that fall between those dates.
+				</td>
 					
-					<td>
-						<table class="search-form">
-							<tr class="search-box">
-								<td>
-							         Enter an address or city, state to create a ride:
-							        <input id="search-bar" type="text" size="45" name="address" />
-							        <input type="button" value="Go!" onclick="showAddressSearchBox()"/>
-						           	<hr>
-						         </td>
-							</tr>
-							<tr class="search-dates">
-								<td>
-									<form>
-										<label>Beginning
-											<input id="begindate"/>
-										</label>
-
-										<label>Ending
-											<input id="enddate"/>
-										</label>
-
-										<input type="button" value="Show Matching Rides" onclick="filterRides()" />	
-										<input type="button" value="Clear Filter" onclick="initialize()" />	
-									</form>
-								</td>
-							</tr>
-				    	</table>
-					</td>
-				</tr>
-			</table>
-		</div>
+				<td id="search-controls">
+					<table id="search-form">
+						<tr id="search-box">
+							<td>
+								<h4>Enter an address or city, state to create a ride:<br></h4>
+							    <input id="search-bar" type="text" size="45" name="address" />
+							    <input type="button" value="Create Ride" onclick="showAddressSearchBox()"/>
+						        <hr>
+						    </td>
+						</tr>
+						<tr>
+							<td id="filter-dates">
+								<h4>Filter Rides</h4>
+								<label>Beginning: <input id="begindate"/></label>
+								<br>
+								<label>Ending: <input id="enddate"/></label>
+								<br>
+								<input type="button" value="Show Matching Rides" onclick="filterRides()" />	
+								<input type="button" value="Clear Filter" onclick="initialize()" />	
+							</td>
+						</tr>
+				    </table>
+				</td>
+			</tr>
+		</table>
+	</div>
 		
-		<div id="map-canvas"></div>
+	<div id="map-canvas"></div>
 		
-		<div class="available-rides">
-		
-			<div class="rides-header">
-				<h2>All Available Rides.</h2>
-                <p>Click Destination to join</p>
-			</div>
+	<div id="available-rides">
+		<div id="rides-header">
+			<h2><span>All Available Rides.</span></h2>
 			
-			<div class="ridelist">
-            	<table border="1" id="ride-table">
-                	<thead>
-                  		<tr>
-                    		<th>Driver's Name</th>
-                    		<th>Additional Passengers</th>
-		                    <th>Starting Point</th>
-		                    <th>Destination</th>
-		                    <th>Time of Departure</th>
-		                    <th>Comments</th>
-                 		 </tr>
-                	</thead>
-	                <tbody id="rideTableBody">
-	                </tbody>
-            	</table>
-        	</div>
+            <h4>Click on any destination to join the ride</h4>
 		</div>
-		
-		
+			
+		<div class="ridelist">
+            <table class="ride-table">
+                <thead>
+                  	<tr>
+                    	<th>Driver's Name</th>
+                    	<th>Additional Passengers</th>
+		                <th>Starting Point</th>
+		                <th>Destination</th>
+		                <th>Time of Departure</th>
+		                <th>Comments</th>
+                 	</tr>
+                </thead>
+	            <tbody id="rideTableBody">
+	            </tbody>
+            </table>
+        </div>
+	</div>	
+	
+	<div id="footer">
+  		<h3><span>Created at Luther College.  Developed and updated at Albright College.</span></h3>
+  	</div>
 	</body>
 </html>

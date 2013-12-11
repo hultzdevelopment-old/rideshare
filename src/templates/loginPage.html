@@ -1,15 +1,13 @@
 {% extends "headers/login_header.html" %}
 
 {% block content %}
-	<div id="loginHeader">
+	<div id="login-content">
     	<h2>Welcome to {{college.name}} Rideshare!</h2>                      
         <p>To get started please login with your Albright Email Account</p>
-	</div>
+        
+		<a href="{{ login }}"><button>Login to your Albright Account</button></a>
 	
-	<div id="login-button">
-		<a href="{{ login }}">Login to your Albright Account</a>
 	</div>
-	
                     
 {% endblock %}
 

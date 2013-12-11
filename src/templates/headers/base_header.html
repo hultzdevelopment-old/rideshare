@@ -7,18 +7,19 @@
 </head>
 
 <body>
-	<div class="header">
-	    <div class="logo">
-	    	<h1><a href="/main">{{college.name}} Rideshare</a></h1>
-	    </div>
-	      	
-	    <div class="menu">
-    		<ul>
-				<li><a href="/home">Your Rides</a></li>
+	<div id="logo">
+		<h1><a href="/main"><span>{{college.name}} Rideshare</span></a></h1>
+	</div>
+	<div id="header">
+		<div id="menu" class="container">
+	    	<ul>
+	       		<li><span id="welcome-message">Welcome, {{user}}</span></li>
+	       		<li><a href="/main">Main Page</a>
+	        	<li><a href="/home">My Rides</a></li>
+	        	<li><a href="/help">Help</a></li>
 				<li><a href="{{logout_url}}">Sign out</a></li>
-				<li><a href="/help">Help</a></li>
-    		</ul>
-  		</div>
+	        </ul>
+	      </div>
 	</div>
 	
   	<div id="content">
@@ -26,5 +27,8 @@
   		{% endblock %}
   	</div>
   	
+  	<div id="footer">
+  		<h3><span>Created at Luther College.  Developed and updated at Albright College.</span></h3>
+  	</div>
 </body>
 </html>

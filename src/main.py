@@ -22,17 +22,17 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
 
-
 secret = 'nAIq3dHJ9gNN*jql9P*u%@zOdceZ&V2MUSe0DxYSnna$!n699^!cx2K9qP~IXtEbtnrjFc1#7At'
-
-early_late_strings = { "0": "Early", "1": "Late" }
-part_of_day_strings = { "0": "Morning", "1": "Afternoon", "2": "Evening" }
 
 rideshare_email = "nhultz328@gmail.com"
 rideshare_website = "www.albrightrideshare.appspot.com"
 
 DEFAULT_GROUP_NAME = 'albright'
 
+def dateformat(value, format='%b %d, %Y'):
+    return value.strftime(format)
+
+jinja_env.filters['date'] = dateformat
 
 """Used mainly to make cookie values secure"""
 def make_secure_val(val):
@@ -47,12 +47,17 @@ def check_secure_val(secure_val):
 """Used to take a student albright email and return
 a first and last name for the greeting"""
 def format_name(email):
-    match = re.search(r'[a-z]+.[a-z]+', email)
-    name_list = match.group().split('.')
+    if email.endswith('albright.edu'):
+        match = re.search(r'[a-z]+.[a-z]+', email)
+        name_list = match.group().split('.')
     
-    first_name = name_list[0].capitalize()
-    last_name = name_list[1].capitalize()
-    name = first_name + ' ' + last_name
+        first_name = name_list[0].capitalize()
+        last_name = name_list[1].capitalize()
+        name = first_name + ' ' + last_name
+    elif email.endswith('alb.edu'):
+        name_list = email.split('@')
+        name = name_list[0]
+
     return name
 
 """Create default parent keys so taht queries are Strongly Consistent"""
@@ -63,8 +68,6 @@ def create_entity_parent(entity_group, group_name = DEFAULT_GROUP_NAME):
 Also makes sure that the datastore actually contains the college info"""
 
 college_query = College.query()
-logging.debug(college_query)
-
 if college_query.count()==0:
     mycollege = College(parent=create_entity_parent('CollegeGroup','mycollege'))
     mycollege.name="Albright College"
@@ -85,7 +88,6 @@ class Handler(webapp2.RequestHandler):
         return t.render(params)
     
     def render(self, template, **kw):
-        logging.debug("Rendering template " + template)
         self.write(self.render_str(template, **kw)) 
         
     def set_secure_cookie(self, name, val):
@@ -127,8 +129,28 @@ the person is involved with."""
 class HomeHandler(Handler):
     def get(self):
         if self.user: 
+            allRides = Ride.query(ancestor=create_entity_parent('RideGroup'))
+            
+            my_rides_driver = allRides.filter(Ride.driver == str(self.user.userid)).fetch(50)
+            for rides in my_rides_driver:
+                rides.safekey = rides.key.urlsafe()
+                
+            my_rides_pass = []
+            
+            for ride in allRides:
+                ride.passenger_info=[]
+                passenger_list = ride.passengers
+                for key in passenger_list:
+                    person = key.get()
+                    ride.passenger_info.append(person)
+                    if person.passid == self.user.userid:
+                        my_rides_pass.append(ride)
+                        
+                        
+                
             logout_url = users.create_logout_url('/logout')
-            self.render('home.html', college = mycollege, logout_url=logout_url)
+            self.render('home.html', college = mycollege, user = self.user.name, logout_url=logout_url, 
+                        driving_rides = my_rides_driver, pass_rides = my_rides_pass)
         else:
             self.redirect('/')
 
@@ -136,8 +158,7 @@ class HomeHandler(Handler):
 class NewRideHandler(Handler):
     def get(self):
         newRide = Ride(parent=create_entity_parent('RideGroup'))
-        
-        max_pass = int(self.request.get("maxp"))
+
         initial_number = self.request.get("contact")
         if not "-" in initial_number:
             contact_number = initial_number[0:3] + '-' + initial_number[3:6] + '-' + initial_number[6:]
@@ -146,29 +167,29 @@ class NewRideHandler(Handler):
         newRide.contact = contact_number
         
         isDriver = self.request.get("isDriver")
-        if isDriver.lower() == "false":
-            isDriver = False
-        else:
+        if isDriver.lower() == "true":
             isDriver = True
+        else:
+            isDriver = False
             
         lat = float(self.request.get("lat")) * (random.random() * (1.000001-.999999) + 1.000001)
         lng = float(self.request.get("lng")) * (random.random() * (1.000001-.999999) + 1.000001)
         
-        checked = self.request.get("toCollege")
+        direction = self.request.get("direction")
         
-        if checked == 'true':
-            newRide.start_point_title = self.request.get("from")
+        if direction == 'tocollege':
+            newRide.start_point_title = self.request.get("start_point")
             newRide.start_point_lat = lat
             newRide.start_point_long = lng
             newRide.destination_title = mycollege.name
             newRide.destination_lat = mycollege.lat
             newRide.destination_long = mycollege.lng
             
-        elif checked == 'false':
+        elif direction == 'fromcollege':
             newRide.start_point_title = mycollege.name
             newRide.start_point_lat = mycollege.lat
             newRide.start_point_long = mycollege.lng
-            newRide.destination_title = self.request.get("to")
+            newRide.destination_title = self.request.get("destination")
             newRide.destination_lat = lat
             newRide.destination_long = lng 
         
@@ -176,21 +197,20 @@ class NewRideHandler(Handler):
         month = int(self.request.get("month"))
         day = int(self.request.get("day"))
         
-        earlylate_value = self.request.get("earlylate")
-        part_of_day_value = self.request.get("partofday")
-
-        earlylate = early_late_strings[earlylate_value]
-        part_of_day = part_of_day_strings[part_of_day_value]
+        earlylate = self.request.get("earlylate")
+        part_of_day = self.request.get("partofday")
         
 
         newRide.part_of_day = earlylate + ' ' + part_of_day
         newRide.ToD = date(int(year),int(month)+1,int(day))
         
+        max_pass = int(self.request.get("maxp"))
         newRide.max_passengers = max_pass
-        newRide.passengers = []
         
         newRide.comment = self.request.get("comment") 
-               
+        
+        newRide.passengers = []
+            
         if isDriver:
             newRide.driver = str(self.user.userid)
             newRide.drivername = self.user.name
@@ -342,7 +362,7 @@ class AddPassengerHandler(Handler):
         else:
             logging.debug("Ride joined successfully")
             passenger = Passenger()
-            passenger.passid = user.userid
+            passenger.passid = str(user.userid)
             passenger.fullname = user.name
             passenger.contact = contact
             passenger.location = location
@@ -457,7 +477,92 @@ class AddDriverHandler(Handler):
         json_result = json.dumps(messages)
         self.response.headers.add_header('content-type','application/json')
         self.write(json_result)
+
+class EditRideHandler(Handler):
+    def get(self):
+        get_key = self.request.get("key")
+        ride_key = ndb.Key(urlsafe=get_key)
+        ride = ride_key.get()
         
+        leaving_time = ride.part_of_day.split(' ')
+        pass_list = []
+        for key in ride.passengers:
+            pass_list.append(key.get().fullname)
+        
+        logout_url = users.create_logout_url('/logout')
+        self.render('edit.html', college=mycollege, logout_url=logout_url, passengers=pass_list, safekey=ride.key.urlsafe(),
+                                ride=ride, user=self.user.name, earlylate=leaving_time[0], part_of_day=leaving_time[1])
+
+class ChangeRideHandler(Handler):
+    def post(self):
+        ride_key = ndb.Key(urlsafe=self.request.get("key"))
+        ride = ride_key.get()
+
+        contact = self.request.get("contact")
+        comment = self.request.get("ridecomment")
+        partofday = self.request.get("partofday")
+        earlylate = self.request.get("earlylate")
+        numpass = self.request.get("numpass")
+
+        partOfDay = early_late_strings[earlylate] + " " + part_of_day_strings[partofday]
+
+        ride.part_of_day = partOfDay
+        ride.contact = contact
+        ride.comment = comment
+        ride.max_passengers = int(numpass)
+
+        ride.put()
+        self.redirect("/home")
+        
+class DeleteRideHandler(Handler):
+    """
+    Deletes a ride using a key
+    """
+    def get(self):
+        ride_key = ndb.Key(urlsafe=self.request.get("key"))
+        ride = ride_key.get()
+        
+        if ride.num_passengers == 0:
+            ride.key.delete()
+        else:
+            ride.driver = None
+            ride.put()
+            for key in ride.passengers:
+                person = key.get()
+                #self.sendRiderEmail()
+
+        self.redirect('/home')
+
+    def sendRiderEmail(self):
+        if loginType == "facebook":
+            to = FBUser.get_by_key_name(to)
+            logging.debug(to)
+        sender = FROM_EMAIL_ADDR
+        subject = "Change in your ride"
+        
+        body = """
+            Dear %s,
+            
+            We wanted to let you know that there has been a change in status of your ride
+            from %s to %s on %s.  Unfortunately the driver is unable to drive anymore.
+            The ride will remain, but it will appear as a ride
+            that is in need of a driver.  When a new driver is found you will be notified
+            by email.
+            
+            
+            Sincerely,
+            
+            The Rideshare Team
+            """ % (to.nickname(),  ride.start_point_title, ride.destination_title, ride.ToD)
+        if loginType == "google":
+            mail.send_mail(sender,to,subject,body)
+        else:
+            try:
+                graph = facebook.GraphAPI(to.access_token)
+                graph.put_object("me", "feed", message=body)
+
+            except:
+                logging.debug(graph.put_object("me", "feed", message=body))
         
     
 """This section handles login and logout of the app.
@@ -524,7 +629,10 @@ app = webapp2.WSGIApplication([
                                ('/newride', NewRideHandler),
                                ('/getrides', RideQueryHandler),
                                ('/addpass', AddPassengerHandler),
-                               ('/adddriver', AddDriverHandler)
+                               ('/adddriver', AddDriverHandler),
+                               ('/editride', EditRideHandler),
+                               ('/applyedits', ChangeRideHandler),
+                               ('/deleteride', DeleteRideHandler)
 ], debug=True)
 
 

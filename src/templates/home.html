@@ -1,8 +1,85 @@
 {% extends "headers/base_header.html" %}
 
 {% block content %}
-	<div id="home-content">
-		<h2> Personal Home Page</h2>
+	<div class="ridelist">
+		<h2>Welcome to your personal home page.</h2>
+		<hr>
+		
+		<div id="driving_rides">
+			{% if (driving_rides | count) == 0 %}
+				<p>You are not the driver of any rides currently.</p>
+			{% else %}
+				<h4>You are driving for the following rides:</h4>
+				{% for ride in driving_rides %}
+				
+				<table class="ride-table" id="driving_table">
+					<tr>
+						<th>Driver's Name</th>
+                    	<th>Additional Passengers</th>
+		                <th>Starting Point</th>
+		                <th>Destination</th>
+		                <th>Departing</th>
+		               	<th>Comments</th>
+		               	<th>Modify</th>
+		        	</tr>
+		        	<tr>
+		        		<td>{{ ride.drivername }}</td>
+		        		<td>{{ ride.max_passengers - ride.num_passengers }}</td>
+		        		<td>{{ ride.start_point_title }}</td>
+		        		<td>{{ ride.destination_title }}</td>
+		        		<td align="center">{{ ride.part_of_day}}<br> {{ ride.ToD }}</td>
+		        		<td>{{ ride.comment }}</td>
+		        		<td><a href="/editride?key={{ride.safekey}}"><button>Edit</button></a></td>
+		        	</tr>
+				</table>
+				<br>
+				{% if ride.passenger_info %}
+					<h4>Passengers:</h4>
+					{% for pass in ride.passenger_info %}
+						<p>{{pass.fullname}}   {{pass.contact}}</p>
+					{% endfor %}
+				{% else %}
+					<p>No passengers have joined this ride yet.
+				{% endif %}
+				
+				
+				{% endfor %}
+			{% endif %}	
+		</div>
+		
+		<hr>
+		
+		<div id="passenger_rides">
+			{% if (pass_rides | count) == 0 %}
+				<p>You are not the passenger of any rides currently.</p>
+			{% else %}
+				<h4>You are a passenger for the following rides:</h4>
+				{% for ride in pass_rides %}
+				
+				<table class="ride-table" id="driving_table">
+					<tr>
+						<th>Driver's Name</th>
+                    	<th>Additional Passengers</th>
+		                <th>Starting Point</th>
+		                <th>Destination</th>
+		                <th>Departing</th>
+		               	<th>Comments</th>
+		        	</tr>
+		        	<tr>
+		        		<td>{{ ride.drivername }}</td>
+		        		<td>{{ ride.max_passengers - ride.num_passengers }}</td>
+		        		<td>{{ ride.start_point_title }}</td>
+		        		<td>{{ ride.destination_title }}</td>
+		        		<td align="center">{{ ride.part_of_day}}<br> {{ ride.ToD }}</td>
+		        		<td>{{ ride.comment }}</td>
+		        	</tr>
+		        	
+				</table>
+				<br>
+				{% endfor %}
+			{% endif %}
+		
+		</div>
     	
 	</div>
 	

@@ -1,0 +1,70 @@
+{% extends "headers/base_header.html" %}
+
+{% block content %}
+	
+	<script>
+		function confirmDelete() {
+			if (confirm('Are you sure you want to delete this ride?')){
+				location.href='/deleteride?key={{ safekey }}';
+				}
+		}
+	</script>
+	
+	<h3>Edit This Ride</h3>
+	<hr>
+	
+	<form method="post" action="/applyedits">
+		<p><b>Starting Point:</b> {{ride.start_point_title}}</p>
+		<p><b>Destination:</b> {{ride.destination_title}}</p>
+		
+		<p>Time: 
+        <select name="earlylate" id="earlylate">
+        	<option value="0" 
+        		{% if earlylate=="Early" %}
+        			selected="true"
+        		{% endif %}
+        	>Early</option>
+        	
+        	<option value="1"
+        		{% if earlylate=="Late" %}
+        			selected="true"
+        		{% endif %}
+        	 >Late</option></select>
+        	 
+        	 <select name="partofday" id="partofday">
+        	 	<option value="0"
+        	 		{% if part_of_day=="Morning" %}
+        	 			selected="true"
+        	 		{% endif %}
+        	 	>Morning</option>
+        	 	
+        	 	<option value="1"
+        	 		{% if part_of_day == "Afternoon" %}
+        	 			selected="true"
+        	 		{% endif %}
+        	 	>Afternoon</option>
+        	 	
+        	 	<option value="2"
+        	 		{% if part_of_day=="Evening" %}
+        	 			selected="true"
+        	 		{% endif %}
+        	 	>Evening</option></select>
+        	 	
+		{{ride.ToD|date}}</p>
+		
+		<p>Contact Number: <input type="text" name="contact" value="{{ride.contact}}"></p>
+		<p>Comments: <input type="text" name="ridecomment" value="{{ride.comment}}"></p>
+		
+		<p>Maximum Passengers<input type="text" name="numpass" value="{{ride.max_passengers}}"></p>
+		<p>Passengers:<br>
+			{% for p in passengers %}
+				{{p}} <br>
+			{% endfor %}</p>
+			
+		<input type="hidden" name="key" value="{{safekey}}">
+		<p><input type="button" name="delete" value="Delete this ride" 
+			onclick="confirmDelete()" > 
+        <input type="submit" name="submit" value="Submit Changes"></p>	
+	</form>
+
+{% endblock %}
