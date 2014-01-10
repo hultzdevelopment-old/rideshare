@@ -54,7 +54,7 @@ def format_name(email):
         first_name = name_list[0].capitalize()
         last_name = name_list[1].capitalize()
         name = first_name + ' ' + last_name
-    elif email.endswith('alb.edu'):
+    else:
         name_list = email.split('@')
         name = name_list[0]
 
@@ -485,6 +485,7 @@ class EditRideHandler(Handler):
         ride = ride_key.get()
         
         leaving_time = ride.part_of_day.split(' ')
+
         pass_list = []
         for key in ride.passengers:
             pass_list.append(key.get().fullname)
@@ -503,9 +504,9 @@ class ChangeRideHandler(Handler):
         partofday = self.request.get("partofday")
         earlylate = self.request.get("earlylate")
         numpass = self.request.get("numpass")
-
-        partOfDay = early_late_strings[earlylate] + " " + part_of_day_strings[partofday]
-
+    
+        partOfDay = earlylate + " " + partofday
+        
         ride.part_of_day = partOfDay
         ride.contact = contact
         ride.comment = comment
@@ -571,7 +572,7 @@ class LoginHandler(Handler):
     """For Login"""
     def get(self):
         user = users.get_current_user()
-        if user and (user.email().endswith("albright.edu") or user.email().endswith("alb.edu")): 
+        if user and (user.email().endswith("albright.edu") or user.email().endswith("alb.edu") or user.email().endswith("gmail.com")): 
             if UserPrefs.by_id(user.user_id()):
                 self.login(user)
                 self.redirect('/main')

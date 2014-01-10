@@ -19,32 +19,32 @@
 		
 		<p>Time: 
         <select name="earlylate" id="earlylate">
-        	<option value="0" 
+        	<option value="Early" 
         		{% if earlylate=="Early" %}
         			selected="true"
         		{% endif %}
         	>Early</option>
         	
-        	<option value="1"
+        	<option value="Late"
         		{% if earlylate=="Late" %}
         			selected="true"
         		{% endif %}
         	 >Late</option></select>
         	 
         	 <select name="partofday" id="partofday">
-        	 	<option value="0"
+        	 	<option value="Morning"
         	 		{% if part_of_day=="Morning" %}
         	 			selected="true"
         	 		{% endif %}
         	 	>Morning</option>
         	 	
-        	 	<option value="1"
+        	 	<option value="Afternoon"
         	 		{% if part_of_day == "Afternoon" %}
         	 			selected="true"
         	 		{% endif %}
         	 	>Afternoon</option>
         	 	
-        	 	<option value="2"
+        	 	<option value="Evening"
         	 		{% if part_of_day=="Evening" %}
         	 			selected="true"
         	 		{% endif %}
